@@ -1,5 +1,48 @@
 ---
-title: "Welcome to my website!"
+title: "R Markdown Website"
+output:  
+  html_document:  
+    toc: true  
+    toc_float: true
+    smooth_scroll: true
+    collapsed: false
+    # number_sections: true
+    
 ---
 
-You're up and running!
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Publication quality plots
+
+## Colour schemes
+
+## Background layers (theme layers)
+
+## Legend manipulation
+
+## Axes manipulation
+
+## Facets, rotations, etc.
+
+## Export
+
+### High quality files
+
+### Export to office
+
+# Interactive visualization
+
+## Introduction to plotly
+
+## Introduction to ggvis
+
+## Introduction to 3D
+
+# Geographic plotting
+
+## ggplot2
+
+## leaflet
+

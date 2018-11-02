@@ -5,3 +5,4 @@ navbar:
   right:
     - text: "EcoDataSci-TL"
       href: https://example.com
+output_dir: "."

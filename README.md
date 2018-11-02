@@ -1,4 +1,4 @@
-#Workshop on visualizations in R
+# Workshop on visualizations in R
 
 In this workshop we will teach three main topics in visualizations:
 1. Creating plots for publications

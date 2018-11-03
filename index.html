@@ -300,6 +300,23 @@ div.tocify {
 </div>
 
 
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>In this workshop we will focus three topics:</p>
+<ol style="list-style-type: decimal">
+<li><p>How to preper our plots for publication</p></li>
+<li><p>How to create interactive visualizations</p></li>
+<li><p>How to create geographic visualization</p></li>
+</ol>
+<p>We will use data on alcohol consumption in the world per person per capita. At first we will explor the data in regular types of plots. And then we will upload again the same data in ashapefile format to learn how to plot the data on a global map.</p>
+<p>First thing is to make sure you have all the libraries uploaded for this session</p>
+<pre class="r"><code>library(tidyverse)
+library(plotly)
+library(leaflet)
+library(geojsonio)</code></pre>
+<p>Next, upload the data into your work environment. Make sure to change the path that you are using in the following code to fit the path for the file in your computer.</p>
+<pre class="r"><code>data.vis&lt;- read.csv(&quot;~/Dropbox/Studies/ecodatasci_tlv/visualizations/alcohol-consumption-per-person_VinR.csv&quot;)</code></pre>
+</div>
 <div id="publication-quality-plots" class="section level1">
 <h1>Publication quality plots</h1>
 <div id="colour-schemes" class="section level2">
@@ -329,8 +346,10 @@ div.tocify {
 </div>
 <div id="interactive-visualization" class="section level1">
 <h1>Interactive visualization</h1>
+<p>In this part we will learn how to create interactive plots and how to use them online and in presentations or Rmd files for reporting our results.</p>
 <div id="introduction-to-plotly" class="section level2">
 <h2>Introduction to plotly</h2>
+<p>Plotly is a grate cross platform package that allows a lot of variation for plotting interactive plots. We will use the R version of the package. Lets start with a simple scatter plot</p>
 </div>
 <div id="introduction-to-ggvis" class="section level2">
 <h2>Introduction to ggvis</h2>
@@ -346,6 +365,8 @@ div.tocify {
 </div>
 <div id="leaflet" class="section level2">
 <h2>leaflet</h2>
+<p>Read the map shapefile into R. We use geoJSON because it’s a lighter file format for geographical data</p>
+<pre class="r"><code>#Data.vis.shape &lt;- geojsonio::geojson_read(&quot;shapefile.json&quot;, what = &quot;sp&quot;)</code></pre>
 </div>
 </div>
 

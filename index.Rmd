@@ -1,5 +1,6 @@
 ---
-title: "R Markdown Website"
+title: "Visualizations in R"
+author: "Alex Slavenko and Maria Novosolov"
 output:  
   html_document:  
     toc: true  

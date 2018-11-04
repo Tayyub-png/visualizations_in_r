@@ -34,6 +34,9 @@ library(tidyverse)
 library(plotly)
 library(leaflet)
 library(geojsonio)
+library(ggpubr)
+library(rvg)
+library(ggvis)
 ```
 
 Next, upload the data into your work environment. Make sure to change the path that you are using in the following code to fit the path for the file in your computer.

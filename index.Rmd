@@ -39,6 +39,7 @@ library(ggvis)
 library(RColorBrewer)
 library(extrafont)
 library(cowplot)
+library(scales)
 ```
 
 Next, upload the data into your work environment. Make sure to change the path that you are using in the following code to fit the path for the file in your computer.
@@ -176,7 +177,7 @@ Now, we'll use the plot_grid() from the package 'cowplot' to draw the two plots 
 
 ```{r}
 p <- p + facet_grid(Continent ~ .) + theme(legend.position = "none", strip.background = element_blank(), strip.text = element_blank())
-p2 <- p2 + coord_flip() + theme(legend.position = "none", axis.title.y = element_blank(), title = element_text(colour = "white")) + scale_x_discrete(limits = rev(levels(data.vis$Continent)))
+p2 <- p2 + coord_flip() + theme(legend.position = "none", axis.title.y = element_blank(), plot.title = element_text(colour = "white")) + scale_x_discrete(limits = rev(levels(data.vis$Continent)))
 p3 <- plot_grid(p, p2)
 p3
 ```
@@ -219,7 +220,7 @@ dev.off()
 After we learned all this the hard way, let's learn the easy way. The 'ggpubr' package is the simple way to create nice looking plots. For instance, we can recreate our violin plot using just one line of code, and even add some analysis to it.
 
 ```{r}
-ggviolin(data.vis, x = "Continent", y = "total", fill = "Continent", palette = witness.me, add = c("boxplot")) + geom_jitter(width = .1, alpha = .2) + coord_flip() + theme(legend.position = "none")
+ggviolin(data.vis, x = "Continent", y = "total", fill = "Continent", palette = witness.me, add = "boxplot", ylab = expression("Consumption (l"/"y"~")")) + geom_jitter(width = .1, alpha = .2) + coord_flip() + theme(legend.position = "none")
 ```
 
 'ggpubr' has similar types of functions for different types of plots (scatterplots, boxplots, etc.). All look lovely, and require a lot less hassle to generate. It's a package well worth exploring.

@@ -40,12 +40,34 @@ library(RColorBrewer)
 library(extrafont)
 library(cowplot)
 library(scales)
+library(ggmap)
+library(mapdata)
+
+```
+
+A bit more preperation before we start: add all the fonts in your computer to R
+```{r message=FALSE, warning=FALSE}
+# font_import(prompt = F) #this imports fonts from your computer into R, and may take a lot of time
+#load the fonts
+loadfonts(quiet = T) #you may need to change the device, depending on whether you want to print the plot in R or export it
 ```
 
 Next, upload the data into your work environment. Make sure to change the path that you are using in the following code to fit the path for the file in your computer.
+We will upload the spatial data (the map) that we will use later, and save the metadata as a tibble to use it in the first part of the session.
+For your work, make sure to set the working directory with:
+
+setwd("your/path/to/data/file")
+
+or always add it when you read the file in.
 
 ```{r}
-data.vis <- read.csv("C:/visualizations_in_r/country_alcohol.csv")
+#upload the spatial file using geojson and specifying to R that it's a shapefile
+data.vis.sp<- geojsonio::geojson_read("country_alcohol.geojson",
+  what = "sp")
+#save the data from the shapefile into a tibble
+data.vis<- as_tibble(data.vis.sp@data)
+#remove all the lines with NA's. The function complete.cases removes all the lines that have NA's in them somewhere
+data.vis<- data.vis[complete.cases(data.vis),]
 ```
  
 Let's view our data:
@@ -61,7 +83,7 @@ Now, let's start plotting!
 
 First, we'll plot some data. We'll plot the size of country (log-transformed) on the x axis, and the total alcohol consumption on the y axis. We'll also colour our data based on continent.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 p <- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data.vis) + geom_point() + ggtitle("Per capita alcohol consumption")
 p
 ```
@@ -79,7 +101,7 @@ p + scale_color_manual(values = my.palette)
 
 We can also generate custom color palettes using online tools. There are many different online tools to generate colour palettes, and in this tutorial we will try one nifty one, found on this website: https://palettegenerator.com/ So we'll use this one to make an epic Max Max colour palette!
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 witness.me <- c("#DE8136", "#19191B", "#F6CAB1", "#533927", "#986039", "#166268")
 p <- p + scale_color_manual(values = witness.me)
 p
@@ -93,10 +115,8 @@ Now, let's try and make the plot look a bit better. We can do this using the the
 Modifying elements in the theme is simple, but notice that different elements inherit different functions. For instance, modifying text elements is done using element_text(), whereas modifying line elements is done using element_line(). The one exception is element_blank() - use this for (almost) any type of element that you want to remove from the plot completely.
 Here are a few useful examples:
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 p + theme(text = element_text(size = 16)) #change the font size
-font_import() #this imports fonts from your computer into R, and may take a lot of time
-loadfonts(device = "win") #you may need to change the device, depending on whether you want to print the plot in R or export it
 p + theme(text = element_text(family = "Comic Sans MS")) #change the font family (this is horrible, never use comic sans)
 p + theme(panel.grid = element_blank()) #remove gridlines
 p + theme(panel.background = element_rect(fill = "black")) #change color of background
@@ -110,7 +130,7 @@ p
 
 One of the most useful things you can do is to manipulate the legend. You can rename items in the legend, restyle it, move it around, or just delete it altogether.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 p + theme(legend.position = "none") #remove the legend
 p + theme(legend.position = c(.1,.75)) #move the legend to a different position
 p + theme(legend.title = element_blank()) #remove the title of the legend
@@ -120,7 +140,7 @@ p + theme(legend.title = element_blank()) #remove the title of the legend
 
 First of all, it's about time we do something about our ugly data. One of our main issues is that the country areas (on the X axis) should be log-transformed. We can transform our data using a simple line of code.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 p + scale_x_continuous(trans = log10_trans())
 ```
 
@@ -188,15 +208,18 @@ p3
 Finally, it's time to export our plot. There are several formats basic R can export to, the most useful of which are JPG, PNG and PDF. The code for them all follows the same basic format.
 
 ```{r}
-jpeg("C:/visualizations_in_r/myplot.jpg") #make sure to set your pathway!
+# jpeg("C:/visualizations_in_r/myplot.jpg") #make sure to set your pathway!
+jpeg("myplot.jpg")
 p3
 dev.off()
 
-png("C:/visualizations_in_r/myplot.png")
+# png("C:/visualizations_in_r/myplot.png")
+png("myplot.png")
 p3
 dev.off()
 
-pdf("C:/visualizations_in_r/myplot.pdf")
+# pdf("C:/visualizations_in_r/myplot.pdf")
+pdf("myplot.pdf")
 p3
 dev.off()
 ```
@@ -206,11 +229,14 @@ dev.off()
 As you've probably noticed, while the PDF file looks ok, the JPG and PNG are really poor quality. However, we can fix this. For instance, we can create a TIFF file with a higher resolution and larger size. Also, we can change the size of the PDF, or export to other, different file formats.
 
 ```{r}
-tiff("C:/visualizations_in_r/myplot.tiff", height = 20, width = 20, units = "cm", res = 300)
+# tiff("C:/visualizations_in_r/myplot.tiff", height = 20, width = 20, units = "cm", res = 300)
+tiff("myplot.tiff", height = 20, width = 20, units = "cm", res = 300)
 p3
 dev.off()
 
-pdf("C:/visualizations_in_r/myplot.pdf", height = 20, width = 20)
+# pdf("C:/visualizations_in_r/myplot.pdf", height = 20, width = 20)
+pdf("myplot.pdf", height = 20, width = 20)
+
 p3
 dev.off()
 ```
@@ -231,10 +257,13 @@ In this part we will learn how to create interactive plots and how to use them o
 
 ## Introduction to plotly
 
-Plotly is a grate cross platform package that allows a lot of variation for plotting interactive plots. We will use the R version of the package. Lets start with a simple use of the package and that is transforming our ggplots to interactive visualizations with the code ggplotly()
+Plotly is a grate cross platform package that allows a lot of variation for plotting interactive plots. We will use the R version of the package. Lets start with a simple use of the package, which transformes our ggplots to interactive visualizations with the code ggplotly()
 
 ```{r}
-# ggplotly()
+p <- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data.vis) + geom_point() + ggtitle("Per capita alcohol consumption")
+p
+
+ggplotly(p)
 ```
 
 Now we can also just use 
@@ -245,12 +274,22 @@ Now we can also just use
 
 # Geographic plotting
 
+We can plot two types of geographical plots in R - stationary and interactive. The first one is done with ggplot the second is mainly done with leaflet but note that there are some more packages out there. We'll start with ggplot
+
 ## ggplot2
+
+For this we need a few packages that we uploaded before: `maps`, `mapdata`, and `ggplot2`
+* The `maps` package contains a lot of outlines of continents, countries, states, and counties that have been with R for a long time.
+* The `mapdata` package contains a few more, higher-resolution outlines.
+* The `maps` package comes with a plotting function, but, we will opt to use `ggplot2` to plot the maps in the `maps` package.
+* Recall that `ggplot2` operates on data frames. Therefore we need some way to translate the maps data into a data frame format the `ggplot` can use.
+
+First we'll create a world map tamplate that we will use to map our data on it
+```{r}
+w2hr <- map_data("world2Hires")
+```
 
 ## leaflet
 
-Read the map shapefile into R. We use geoJSON because it's a lighter file format for geographical data
-```{r}
-#data.vis.shape <- geojsonio::geojson_read("C:/visualizations_in_r/country_alcohol.geojson", what = "sp")
-```
+
 

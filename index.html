@@ -26,6 +26,13 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.3/htmlwidgets.js"></script>
+<script src="site_libs/plotly-binding-4.8.0/plotly.js"></script>
+<script src="site_libs/typedarray-0.1/typedarray.min.js"></script>
+<link href="site_libs/crosstalk-1.0.0/css/crosstalk.css" rel="stylesheet" />
+<script src="site_libs/crosstalk-1.0.0/js/crosstalk.min.js"></script>
+<link href="site_libs/plotly-htmlwidgets-css-1.39.2/plotly-htmlwidgets.css" rel="stylesheet" />
+<script src="site_libs/plotly-main-1.39.2/plotly-latest.min.js"></script>
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css">
@@ -304,43 +311,192 @@ div.tocify {
 <h1>Introduction</h1>
 <p>In this workshop we will focus three topics:</p>
 <ol style="list-style-type: decimal">
-<li><p>How to preper our plots for publication</p></li>
+<li><p>How to prepare our plots for publication</p></li>
 <li><p>How to create interactive visualizations</p></li>
-<li><p>How to create geographic visualization</p></li>
+<li><p>How to create geographic visualizations</p></li>
 </ol>
-<p>We will use data on alcohol consumption in the world per person per capita. At first we will explor the data in regular types of plots. And then we will upload again the same data in ashapefile format to learn how to plot the data on a global map.</p>
-<p>First thing is to make sure you have all the libraries uploaded for this session</p>
+<p>We will use data on per capita alcohol consumption in the countries of the world in 2010. At first, we will explore the data by generating typical plots. We will learn how to manipulate and design these plots to make them publication worthy, and how to turn them into interactive plots. We will then use the same data in ashapefile format to learn how to plot the data on a global map.</p>
+<p>First thing is to make sure you have all the libraries uploaded for this session.</p>
 <pre class="r"><code>library(tidyverse)
 library(plotly)
 library(leaflet)
-library(geojsonio)</code></pre>
-<p>Next, upload the data into your work environment. Make sure to change the path that you are using in the following code to fit the path for the file in your computer.</p>
-<pre class="r"><code>data.vis&lt;- read.csv(&quot;~/Dropbox/Studies/ecodatasci_tlv/visualizations/alcohol-consumption-per-person_VinR.csv&quot;)</code></pre>
+library(geojsonio)
+library(ggpubr)
+library(ggvis)
+library(RColorBrewer)
+library(extrafont)
+library(cowplot)
+library(scales)
+library(ggmap)
+library(mapdata)</code></pre>
+<p>A bit more preperation before we start: add all the fonts in your computer to R</p>
+<pre class="r"><code># font_import(prompt = F) #this imports fonts from your computer into R, and may take a lot of time
+#load the fonts
+loadfonts(quiet = T) #you may need to change the device, depending on whether you want to print the plot in R or export it</code></pre>
+<p>Next, upload the data into your work environment. Make sure to change the path that you are using in the following code to fit the path for the file in your computer. We will upload the spatial data (the map) that we will use later, and save the metadata as a tibble to use it in the first part of the session. For your work, make sure to set the working directory with:</p>
+<p>setwd(“your/path/to/data/file”)</p>
+<p>or always add it when you read the file in.</p>
+<pre class="r"><code>#upload the spatial file using geojson and specifying to R that it&#39;s a shapefile
+data.vis.sp&lt;- geojsonio::geojson_read(&quot;country_alcohol.geojson&quot;,
+  what = &quot;sp&quot;)
+#save the data from the shapefile into a tibble
+data.vis&lt;- as_tibble(data.vis.sp@data)
+#remove all the lines with NA&#39;s. The function complete.cases removes all the lines that have NA&#39;s in them somewhere
+data.vis&lt;- data.vis[complete.cases(data.vis),]</code></pre>
+<p>Let’s view our data:</p>
+<pre class="r"><code>as.tibble(data.vis)</code></pre>
+<pre><code>## # A tibble: 188 x 11
+##    FIPS_CNTRY CNTRY_NAME POP_CNTRY SQKM_CNTRY LANDLOCKED ISLAND Continent
+##    &lt;fct&gt;      &lt;fct&gt;      &lt;fct&gt;          &lt;dbl&gt; &lt;fct&gt;      &lt;fct&gt;  &lt;fct&gt;    
+##  1 AC         Antigua a… 65212           462. N          Y      North Am…
+##  2 AF         Afghanist… 17250390     641869. Y          N      Asia     
+##  3 AG         Algeria    27459230    2320972  N          N      Africa   
+##  4 AJ         Azerbaijan 5487866       85808. Y          N      Asia     
+##  5 AL         Albania    3416945       28754. N          N      Europe   
+##  6 AM         Armenia    3377228       29872. Y          N      Europe   
+##  7 AN         Andorra    55335           452. Y          N      Europe   
+##  8 AO         Angola     11527260    1252421  N          N      Africa   
+##  9 AR         Argentina  33796870    2781013  N          N      South Am…
+## 10 AS         Australia  17827520    7706142  N          N      Oceania  
+## # ... with 178 more rows, and 4 more variables: spirits &lt;dbl&gt;, beer &lt;dbl&gt;,
+## #   wine &lt;dbl&gt;, total &lt;dbl&gt;</code></pre>
+<p>Each row in our data is a country. Our columns give data for each country on its population, size (in square km), if it’s landlocked or not, if it’s an island nation or not, which continent it is on, and the per capita alcohol consumption for 2010: in spirits, beer, wine, and the total consumption.</p>
+<p>Now, let’s start plotting!</p>
 </div>
 <div id="publication-quality-plots" class="section level1">
 <h1>Publication quality plots</h1>
+<p>First, we’ll plot some data. We’ll plot the size of country (log-transformed) on the x axis, and the total alcohol consumption on the y axis. We’ll also colour our data based on continent.</p>
+<pre class="r"><code>p &lt;- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data.vis) + geom_point() + ggtitle(&quot;Per capita alcohol consumption&quot;)
+p</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<p>This basic scatterplot is kind of ugly and uninformative. The good news is this can be improved quite easily, and we can actually make a decent looking plot out of this! We’ll do this step by step.</p>
 <div id="colour-schemes" class="section level2">
 <h2>Colour schemes</h2>
+<p>Our first step will be colour schemes. The easiest thing to is to use the package ‘RColorBrewer’to generate a custom palette from a few nice looking options. With the function ’brewer.pal’ you define how many colours you want (6 in our case, for 6 continents), and which palette you want.</p>
+<pre class="r"><code>my.palette &lt;- brewer.pal(6, &quot;Set3&quot;)
+p + scale_color_manual(values = my.palette)</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+<p>We can also generate custom color palettes using online tools. There are many different online tools to generate colour palettes, and in this tutorial we will try one nifty one, found on this website: <a href="https://palettegenerator.com/" class="uri">https://palettegenerator.com/</a> So we’ll use this one to make an epic Max Max colour palette!</p>
+<pre class="r"><code>witness.me &lt;- c(&quot;#DE8136&quot;, &quot;#19191B&quot;, &quot;#F6CAB1&quot;, &quot;#533927&quot;, &quot;#986039&quot;, &quot;#166268&quot;)
+p &lt;- p + scale_color_manual(values = witness.me)
+p</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+<p>We’ll stick with this palette for the rest of the tutorial.</p>
 </div>
-<div id="background-layers-theme-layers" class="section level2">
-<h2>Background layers (theme layers)</h2>
+<div id="theme-layers" class="section level2">
+<h2>Theme layers</h2>
+<p>Now, let’s try and make the plot look a bit better. We can do this using the theme options - theme() has a LOT of different arguments that let you change the way your plot looks. You can change the background, the axes, the gridlines, the fonts, the titles, and the legend. Modifying elements in the theme is simple, but notice that different elements inherit different functions. For instance, modifying text elements is done using element_text(), whereas modifying line elements is done using element_line(). The one exception is element_blank() - use this for (almost) any type of element that you want to remove from the plot completely. Here are a few useful examples:</p>
+<pre class="r"><code>p + theme(text = element_text(size = 16)) #change the font size</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<pre class="r"><code>p + theme(text = element_text(family = &quot;Comic Sans MS&quot;)) #change the font family (this is horrible, never use comic sans)</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-8-2.png" width="672" /></p>
+<pre class="r"><code>p + theme(panel.grid = element_blank()) #remove gridlines</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-8-3.png" width="672" /></p>
+<pre class="r"><code>p + theme(panel.background = element_rect(fill = &quot;black&quot;)) #change color of background</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-8-4.png" width="672" /></p>
+<pre class="r"><code>p + theme(axis.line = element_line(colour = &quot;black&quot;)) #add axis lines</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-8-5.png" width="672" /></p>
+<pre class="r"><code>p &lt;- p + theme(panel.grid = element_blank(), axis.line = element_line(colour = &quot;black&quot;)) #make several changes together
+p</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-8-6.png" width="672" /></p>
+<div id="legend-manipulation" class="section level3">
+<h3>Legend manipulation</h3>
+<p>One of the most useful things you can do is to manipulate the legend. You can rename items in the legend, restyle it, move it around, or just delete it altogether.</p>
+<pre class="r"><code>p + theme(legend.position = &quot;none&quot;) #remove the legend</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-9-1.png" width="672" /></p>
+<pre class="r"><code>p + theme(legend.position = c(.1,.75)) #move the legend to a different position</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-9-2.png" width="672" /></p>
+<pre class="r"><code>p + theme(legend.title = element_blank()) #remove the title of the legend</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-9-3.png" width="672" /></p>
 </div>
-<div id="legend-manipulation" class="section level2">
-<h2>Legend manipulation</h2>
+<div id="axes-manipulation" class="section level3">
+<h3>Axes manipulation</h3>
+<p>First of all, it’s about time we do something about our ugly data. One of our main issues is that the country areas (on the X axis) should be log-transformed. We can transform our data using a simple line of code.</p>
+<pre class="r"><code>p + scale_x_continuous(trans = log10_trans())</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-10-1.png" width="672" /></p>
+<p>And to make this look a bit better, let’s change the tick labels to have actual numbers:</p>
+<pre class="r"><code>p &lt;- p + scale_x_continuous(trans = log10_trans(), labels = trans_format(&quot;log10&quot;, math_format(10^.x)))
+p</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-11-1.png" width="672" /></p>
+<p>You may also want to change the titles of your axes - this is always useful because usually your data will have column names that are short and easy to type, but less informative for a plot you want to publish. The expression() function is useful for this, because it allows you to add special characters, as well as create super- and subscripts, italics, etc.</p>
+<pre class="r"><code>p &lt;- p + labs(x = expression(&quot;Area (km&quot;^&quot;2&quot;~&quot;)&quot;), y = expression(&quot;Consumption (l&quot;/&quot;y&quot;~&quot;)&quot;))
+p</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-12-1.png" width="672" /></p>
 </div>
-<div id="axes-manipulation" class="section level2">
-<h2>Axes manipulation</h2>
 </div>
 <div id="facets-rotations-etc." class="section level2">
 <h2>Facets, rotations, etc.</h2>
+<p>Now we can deal with another problem - this plot is a bit cluttered. It’s hard to tell the different continents from one another, which makes it difficult to identify trends. We can solve this via facetting - this is a cool tool that allows us to break up our one plot into several similar plots - they all have the same axes, but they are separated by the factor (continents in this case).</p>
+<pre class="r"><code>p + facet_grid(Continent ~ .) #facet in the vertical direction</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+<pre class="r"><code>p + facet_grid(. ~ Continent) #facet in the horizontal direction</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-13-2.png" width="672" /></p>
+<pre class="r"><code>p + facet_wrap( ~ Continent, ncol = 3) #facet in a grid, with a set number of columns (or rows)</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-13-3.png" width="672" /></p>
+<p>We’ve now managed to generate a pretty nice looking plot. You’ll see that we all facets have the same range of values in their axes - this allows us to compare the scatterplots in the different levels of our factor (continent), but because they are each in a different “plot”, it’s a lot less messy and we can see where there is no trend (Europe) and where they might be something going on (Asia).</p>
+<p>Now let’s try to do something a bit more interesting. Let’s try to generate a different plot that allows us to check for differences in alcohol consumption between continents, without taking into acount area. We’ll do this using a violin plot, which is a slightly fancier and more informative version of a boxplot. We’ll use the same colour palette as we did for the scatterplot.</p>
+<pre class="r"><code>p2 &lt;- ggplot(aes(x = Continent, y = total, fill = Continent), data = data.vis) + 
+  geom_violin(trim = F) +
+  geom_boxplot(width = .1) +
+  geom_jitter(height = 0, width = .1, alpha = .2) +
+  scale_fill_manual(values = witness.me) +
+  theme(panel.grid = element_blank(), axis.line = element_line(colour = &quot;black&quot;)) +
+  labs(x = &quot;Continent&quot;, y = expression(&quot;Consumption (l&quot;/&quot;y&quot;~&quot;)&quot;)) +
+  ggtitle(&quot;Per capita alcohol consumption&quot;)
+p2</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-14-1.png" width="672" /></p>
+<p>Now what let’s try and combine these two plots - we want to put them both together, side by side. First thing we’ll do is rotate our violin plot. This is very easily done:</p>
+<pre class="r"><code>p2 + coord_flip()</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-15-1.png" width="672" /></p>
+<p>Now, we’ll use the plot_grid() from the package ‘cowplot’ to draw the two plots side by side.</p>
+<pre class="r"><code>p &lt;- p + facet_grid(Continent ~ .) + theme(legend.position = &quot;none&quot;, strip.background = element_blank(), strip.text = element_blank())
+p2 &lt;- p2 + coord_flip() + theme(legend.position = &quot;none&quot;, axis.title.y = element_blank(), plot.title = element_text(colour = &quot;white&quot;)) + scale_x_discrete(limits = rev(levels(data.vis$Continent)))
+p3 &lt;- plot_grid(p, p2)
+p3</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-16-1.png" width="672" /></p>
 </div>
 <div id="export" class="section level2">
 <h2>Export</h2>
+<p>Finally, it’s time to export our plot. There are several formats basic R can export to, the most useful of which are JPG, PNG and PDF. The code for them all follows the same basic format.</p>
+<pre class="r"><code># jpeg(&quot;C:/visualizations_in_r/myplot.jpg&quot;) #make sure to set your pathway!
+jpeg(&quot;myplot.jpg&quot;)
+p3
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<pre class="r"><code># png(&quot;C:/visualizations_in_r/myplot.png&quot;)
+png(&quot;myplot.png&quot;)
+p3
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<pre class="r"><code># pdf(&quot;C:/visualizations_in_r/myplot.pdf&quot;)
+pdf(&quot;myplot.pdf&quot;)
+p3
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
 <div id="high-quality-files" class="section level3">
 <h3>High quality files</h3>
-</div>
-<div id="export-to-office" class="section level3">
-<h3>Export to office</h3>
+<p>As you’ve probably noticed, while the PDF file looks ok, the JPG and PNG are really poor quality. However, we can fix this. For instance, we can create a TIFF file with a higher resolution and larger size. Also, we can change the size of the PDF, or export to other, different file formats.</p>
+<pre class="r"><code># tiff(&quot;C:/visualizations_in_r/myplot.tiff&quot;, height = 20, width = 20, units = &quot;cm&quot;, res = 300)
+tiff(&quot;myplot.tiff&quot;, height = 20, width = 20, units = &quot;cm&quot;, res = 300)
+p3
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<pre class="r"><code># pdf(&quot;C:/visualizations_in_r/myplot.pdf&quot;, height = 20, width = 20)
+pdf(&quot;myplot.pdf&quot;, height = 20, width = 20)
+
+p3
+dev.off()</code></pre>
+<pre><code>## quartz_off_screen 
+##                 2</code></pre>
+<p>##ggpubr</p>
+<p>After we learned all this the hard way, let’s learn the easy way. The ‘ggpubr’ package is the simple way to create nice looking plots. For instance, we can recreate our violin plot using just one line of code, and even add some analysis to it.</p>
+<pre class="r"><code>ggviolin(data.vis, x = &quot;Continent&quot;, y = &quot;total&quot;, fill = &quot;Continent&quot;, palette = witness.me, add = &quot;boxplot&quot;, ylab = expression(&quot;Consumption (l&quot;/&quot;y&quot;~&quot;)&quot;)) + geom_jitter(width = .1, alpha = .2) + coord_flip() + theme(legend.position = &quot;none&quot;)</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-19-1.png" width="672" /></p>
+<p>‘ggpubr’ has similar types of functions for different types of plots (scatterplots, boxplots, etc.). All look lovely, and require a lot less hassle to generate. It’s a package well worth exploring.</p>
 </div>
 </div>
 </div>
@@ -349,10 +505,14 @@ library(geojsonio)</code></pre>
 <p>In this part we will learn how to create interactive plots and how to use them online and in presentations or Rmd files for reporting our results.</p>
 <div id="introduction-to-plotly" class="section level2">
 <h2>Introduction to plotly</h2>
-<p>Plotly is a grate cross platform package that allows a lot of variation for plotting interactive plots. We will use the R version of the package. Lets start with a simple scatter plot</p>
-</div>
-<div id="introduction-to-ggvis" class="section level2">
-<h2>Introduction to ggvis</h2>
+<p>Plotly is a grate cross platform package that allows a lot of variation for plotting interactive plots. We will use the R version of the package. Lets start with a simple use of the package, which transformes our ggplots to interactive visualizations with the code ggplotly()</p>
+<pre class="r"><code>p &lt;- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data.vis) + geom_point() + ggtitle(&quot;Per capita alcohol consumption&quot;)
+p</code></pre>
+<p><img src="index_files/figure-html/unnamed-chunk-20-1.png" width="672" /></p>
+<pre class="r"><code>ggplotly(p)</code></pre>
+<div id="htmlwidget-68e2f00b87e48d74f474" style="width:672px;height:480px;" class="plotly html-widget"></div>
+<script type="application/json" data-for="htmlwidget-68e2f00b87e48d74f474">{"x":{"data":[{"x":[2320972,1252421,580011.188,116514.797,27253.869,1168002,345429.5,2337027,466306.688,1659.724,621499.375,3961.998,21637.641,982910.375,27085.301,121940.797,1132328,10677.6,261688.703,239980.906,246076.5,322215.594,584428.688,96296.031,30351.641,1620515,594856.375,119027.898,1256747,403859.812,1041570,788628.875,1186021,912038.625,33635.391,25228.23,488.827,1221943.449,196910.703,72531.43,639065.125,2490409,57299.691,1047.785,155401.5,944976.875,243049.906,273719.188,17164.109,754772.688,390803.5,826799.551],"y":[0.44,7.71,4.78,1.08,1.59,0.37,3.53,0.88,2.62,0.15,0.34,4.74,0.43,0.22,9.93,0.4,0.42,0.2,8.82,0.69,0.19,0.99,1.39,3.64,2.11,0,1.03,0.34,0.11,0.56,0,0.9,0.11,0.81,1.67,0.84,6.5,6,0.29,0.23,0,0.46,0.93,5.57,1.28,0.92,0.84,0.7,1.76,1.06,2.11,7.29],"text":["SQKM_CNTRY:  2320972.000<br />total:  0.44<br />Continent: Africa","SQKM_CNTRY:  1252421.000<br />total:  7.71<br />Continent: Africa","SQKM_CNTRY:   580011.188<br />total:  4.78<br />Continent: Africa","SQKM_CNTRY:   116514.797<br />total:  1.08<br />Continent: Africa","SQKM_CNTRY:    27253.869<br />total:  1.59<br />Continent: Africa","SQKM_CNTRY:  1168002.000<br />total:  0.37<br />Continent: Africa","SQKM_CNTRY:   345429.500<br />total:  3.53<br />Continent: Africa","SQKM_CNTRY:  2337027.000<br />total:  0.88<br />Continent: Africa","SQKM_CNTRY:   466306.688<br />total:  2.62<br />Continent: Africa","SQKM_CNTRY:     1659.724<br />total:  0.15<br />Continent: Africa","SQKM_CNTRY:   621499.375<br />total:  0.34<br />Continent: Africa","SQKM_CNTRY:     3961.998<br />total:  4.74<br />Continent: Africa","SQKM_CNTRY:    21637.641<br />total:  0.43<br />Continent: Africa","SQKM_CNTRY:   982910.375<br />total:  0.22<br />Continent: Africa","SQKM_CNTRY:    27085.301<br />total:  9.93<br />Continent: Africa","SQKM_CNTRY:   121940.797<br />total:  0.40<br />Continent: Africa","SQKM_CNTRY:  1132328.000<br />total:  0.42<br />Continent: Africa","SQKM_CNTRY:    10677.600<br />total:  0.20<br />Continent: Africa","SQKM_CNTRY:   261688.703<br />total:  8.82<br />Continent: Africa","SQKM_CNTRY:   239980.906<br />total:  0.69<br />Continent: Africa","SQKM_CNTRY:   246076.500<br />total:  0.19<br />Continent: Africa","SQKM_CNTRY:   322215.594<br />total:  0.99<br />Continent: Africa","SQKM_CNTRY:   584428.688<br />total:  1.39<br />Continent: Africa","SQKM_CNTRY:    96296.031<br />total:  3.64<br />Continent: Africa","SQKM_CNTRY:    30351.641<br />total:  2.11<br />Continent: Africa","SQKM_CNTRY:  1620515.000<br />total:  0.00<br />Continent: Africa","SQKM_CNTRY:   594856.375<br />total:  1.03<br />Continent: Africa","SQKM_CNTRY:   119027.898<br />total:  0.34<br />Continent: Africa","SQKM_CNTRY:  1256747.000<br />total:  0.11<br />Continent: Africa","SQKM_CNTRY:   403859.812<br />total:  0.56<br />Continent: Africa","SQKM_CNTRY:  1041570.000<br />total:  0.00<br />Continent: Africa","SQKM_CNTRY:   788628.875<br />total:  0.90<br />Continent: Africa","SQKM_CNTRY:  1186021.000<br />total:  0.11<br />Continent: Africa","SQKM_CNTRY:   912038.625<br />total:  0.81<br />Continent: Africa","SQKM_CNTRY:    33635.391<br />total:  1.67<br />Continent: Africa","SQKM_CNTRY:    25228.230<br />total:  0.84<br />Continent: Africa","SQKM_CNTRY:      488.827<br />total:  6.50<br />Continent: Africa","SQKM_CNTRY:  1221943.449<br />total:  6.00<br />Continent: Africa","SQKM_CNTRY:   196910.703<br />total:  0.29<br />Continent: Africa","SQKM_CNTRY:    72531.430<br />total:  0.23<br />Continent: Africa","SQKM_CNTRY:   639065.125<br />total:  0.00<br />Continent: Africa","SQKM_CNTRY:  2490409.000<br />total:  0.46<br />Continent: Africa","SQKM_CNTRY:    57299.691<br />total:  0.93<br />Continent: Africa","SQKM_CNTRY:     1047.785<br />total:  5.57<br />Continent: Africa","SQKM_CNTRY:   155401.500<br />total:  1.28<br />Continent: Africa","SQKM_CNTRY:   944976.875<br />total:  0.92<br />Continent: Africa","SQKM_CNTRY:   243049.906<br />total:  0.84<br />Continent: Africa","SQKM_CNTRY:   273719.188<br />total:  0.70<br />Continent: Africa","SQKM_CNTRY:    17164.109<br />total:  1.76<br />Continent: Africa","SQKM_CNTRY:   754772.688<br />total:  1.06<br />Continent: Africa","SQKM_CNTRY:   390803.500<br />total:  2.11<br />Continent: Africa","SQKM_CNTRY:   826799.551<br />total:  7.29<br />Continent: Africa"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(248,118,109,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(248,118,109,1)"}},"hoveron":"points","name":"Africa","legendgroup":"Africa","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[641869.188,85808.203,657.268,138507.203,669820.875,39927.012,5769.535,182612.297,66580.242,9338902,1910842,3089282,1624760,20773.82,436421.906,373049.406,89274.594,199340,122472.602,98338.609,16983.971,2715976,230566.094,10239.88,1559176,2035.197,309651.906,165.325,330269.594,147292.594,877753.375,11098.88,298133.812,16851940,1960175,526.041,187937,71234.406,515144,142410.297,471428.5,445711.312,327122.594,425520.906],"y":[0.01,1.84,1.93,0,0.3,0.28,0.86,2.19,2.27,5.75,0.08,2.77,0.03,2.57,0.18,5.37,0.5,2.73,3.12,2.42,0.01,6.83,5.95,1.56,5.8,2.95,0.56,1.84,0.48,0.24,0.03,1.15,4.71,10.92,0.09,1.81,0.78,1.68,5.93,0.32,2.48,2.73,3.93,0.06],"text":["SQKM_CNTRY:   641869.188<br />total:  0.01<br />Continent: Asia","SQKM_CNTRY:    85808.203<br />total:  1.84<br />Continent: Asia","SQKM_CNTRY:      657.268<br />total:  1.93<br />Continent: Asia","SQKM_CNTRY:   138507.203<br />total:  0.00<br />Continent: Asia","SQKM_CNTRY:   669820.875<br />total:  0.30<br />Continent: Asia","SQKM_CNTRY:    39927.012<br />total:  0.28<br />Continent: Asia","SQKM_CNTRY:     5769.535<br />total:  0.86<br />Continent: Asia","SQKM_CNTRY:   182612.297<br />total:  2.19<br />Continent: Asia","SQKM_CNTRY:    66580.242<br />total:  2.27<br />Continent: Asia","SQKM_CNTRY:  9338902.000<br />total:  5.75<br />Continent: Asia","SQKM_CNTRY:  1910842.000<br />total:  0.08<br />Continent: Asia","SQKM_CNTRY:  3089282.000<br />total:  2.77<br />Continent: Asia","SQKM_CNTRY:  1624760.000<br />total:  0.03<br />Continent: Asia","SQKM_CNTRY:    20773.820<br />total:  2.57<br />Continent: Asia","SQKM_CNTRY:   436421.906<br />total:  0.18<br />Continent: Asia","SQKM_CNTRY:   373049.406<br />total:  5.37<br />Continent: Asia","SQKM_CNTRY:    89274.594<br />total:  0.50<br />Continent: Asia","SQKM_CNTRY:   199340.000<br />total:  2.73<br />Continent: Asia","SQKM_CNTRY:   122472.602<br />total:  3.12<br />Continent: Asia","SQKM_CNTRY:    98338.609<br />total:  2.42<br />Continent: Asia","SQKM_CNTRY:    16983.971<br />total:  0.01<br />Continent: Asia","SQKM_CNTRY:  2715976.000<br />total:  6.83<br />Continent: Asia","SQKM_CNTRY:   230566.094<br />total:  5.95<br />Continent: Asia","SQKM_CNTRY:    10239.880<br />total:  1.56<br />Continent: Asia","SQKM_CNTRY:  1559176.000<br />total:  5.80<br />Continent: Asia","SQKM_CNTRY:     2035.197<br />total:  2.95<br />Continent: Asia","SQKM_CNTRY:   309651.906<br />total:  0.56<br />Continent: Asia","SQKM_CNTRY:      165.325<br />total:  1.84<br />Continent: Asia","SQKM_CNTRY:   330269.594<br />total:  0.48<br />Continent: Asia","SQKM_CNTRY:   147292.594<br />total:  0.24<br />Continent: Asia","SQKM_CNTRY:   877753.375<br />total:  0.03<br />Continent: Asia","SQKM_CNTRY:    11098.880<br />total:  1.15<br />Continent: Asia","SQKM_CNTRY:   298133.812<br />total:  4.71<br />Continent: Asia","SQKM_CNTRY: 16851940.000<br />total: 10.92<br />Continent: Asia","SQKM_CNTRY:  1960175.000<br />total:  0.09<br />Continent: Asia","SQKM_CNTRY:      526.041<br />total:  1.81<br />Continent: Asia","SQKM_CNTRY:   187937.000<br />total:  0.78<br />Continent: Asia","SQKM_CNTRY:    71234.406<br />total:  1.68<br />Continent: Asia","SQKM_CNTRY:   515144.000<br />total:  5.93<br />Continent: Asia","SQKM_CNTRY:   142410.297<br />total:  0.32<br />Continent: Asia","SQKM_CNTRY:   471428.500<br />total:  2.48<br />Continent: Asia","SQKM_CNTRY:   445711.312<br />total:  2.73<br />Continent: Asia","SQKM_CNTRY:   327122.594<br />total:  3.93<br />Continent: Asia","SQKM_CNTRY:   425520.906<br />total:  0.06<br />Continent: Asia"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(183,159,0,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(183,159,0,1)"}},"hoveron":"points","name":"Asia","legendgroup":"Asia","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[28754.5,29872.461,452.485,83738.852,30479.609,51403.379,206680.703,110801.5,9226.847,42670.711,69384.156,45544.559,78495.156,333796.906,546728.875,69943.227,356108.812,131851.906,56287.789,92782.203,101805.297,300979.5,64298.891,64849.199,48648.309,2594.117,33566.98,25321.289,332.366,13743.05,35492.691,316962.406,310715.094,92098.273,236654,20245.689,505674.406,88201.758,443799.688,41178.398,779986.188,243137.203,596040.875],"y":[5.16,4.21,10.61,12.1,10.2,4.41,9.98,10.76,11.31,10.22,10.93,13.16,12.69,8.5,11.5,7.23,11.21,8.9,11.7,10.78,8.11,6.95,9.28,11.4,9.79,11.36,8.02,1.47,7.61,6.42,9.33,6.45,10.59,11.79,9,10.32,9.6,9.45,7.2,9.89,1.49,9.97,8.17],"text":["SQKM_CNTRY:    28754.500<br />total:  5.16<br />Continent: Europe","SQKM_CNTRY:    29872.461<br />total:  4.21<br />Continent: Europe","SQKM_CNTRY:      452.485<br />total: 10.61<br />Continent: Europe","SQKM_CNTRY:    83738.852<br />total: 12.10<br />Continent: Europe","SQKM_CNTRY:    30479.609<br />total: 10.20<br />Continent: Europe","SQKM_CNTRY:    51403.379<br />total:  4.41<br />Continent: Europe","SQKM_CNTRY:   206680.703<br />total:  9.98<br />Continent: Europe","SQKM_CNTRY:   110801.500<br />total: 10.76<br />Continent: Europe","SQKM_CNTRY:     9226.847<br />total: 11.31<br />Continent: Europe","SQKM_CNTRY:    42670.711<br />total: 10.22<br />Continent: Europe","SQKM_CNTRY:    69384.156<br />total: 10.93<br />Continent: Europe","SQKM_CNTRY:    45544.559<br />total: 13.16<br />Continent: Europe","SQKM_CNTRY:    78495.156<br />total: 12.69<br />Continent: Europe","SQKM_CNTRY:   333796.906<br />total:  8.50<br />Continent: Europe","SQKM_CNTRY:   546728.875<br />total: 11.50<br />Continent: Europe","SQKM_CNTRY:    69943.227<br />total:  7.23<br />Continent: Europe","SQKM_CNTRY:   356108.812<br />total: 11.21<br />Continent: Europe","SQKM_CNTRY:   131851.906<br />total:  8.90<br />Continent: Europe","SQKM_CNTRY:    56287.789<br />total: 11.70<br />Continent: Europe","SQKM_CNTRY:    92782.203<br />total: 10.78<br />Continent: Europe","SQKM_CNTRY:   101805.297<br />total:  8.11<br />Continent: Europe","SQKM_CNTRY:   300979.500<br />total:  6.95<br />Continent: Europe","SQKM_CNTRY:    64298.891<br />total:  9.28<br />Continent: Europe","SQKM_CNTRY:    64849.199<br />total: 11.40<br />Continent: Europe","SQKM_CNTRY:    48648.309<br />total:  9.79<br />Continent: Europe","SQKM_CNTRY:     2594.117<br />total: 11.36<br />Continent: Europe","SQKM_CNTRY:    33566.980<br />total:  8.02<br />Continent: Europe","SQKM_CNTRY:    25321.289<br />total:  1.47<br />Continent: Europe","SQKM_CNTRY:      332.366<br />total:  7.61<br />Continent: Europe","SQKM_CNTRY:    13743.050<br />total:  6.42<br />Continent: Europe","SQKM_CNTRY:    35492.691<br />total:  9.33<br />Continent: Europe","SQKM_CNTRY:   316962.406<br />total:  6.45<br />Continent: Europe","SQKM_CNTRY:   310715.094<br />total: 10.59<br />Continent: Europe","SQKM_CNTRY:    92098.273<br />total: 11.79<br />Continent: Europe","SQKM_CNTRY:   236654.000<br />total:  9.00<br />Continent: Europe","SQKM_CNTRY:    20245.689<br />total: 10.32<br />Continent: Europe","SQKM_CNTRY:   505674.406<br />total:  9.60<br />Continent: Europe","SQKM_CNTRY:    88201.758<br />total:  9.45<br />Continent: Europe","SQKM_CNTRY:   443799.688<br />total:  7.20<br />Continent: Europe","SQKM_CNTRY:    41178.398<br />total:  9.89<br />Continent: Europe","SQKM_CNTRY:   779986.188<br />total:  1.49<br />Continent: Europe","SQKM_CNTRY:   243137.203<br />total:  9.97<br />Continent: Europe","SQKM_CNTRY:   596040.875<br />total:  8.17<br />Continent: Europe"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(0,186,56,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(0,186,56,1)"}},"hoveron":"points","name":"Europe","legendgroup":"Europe","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[462.378,439.942,12867.78,9904700,51608.039,110443,731.997,48445.039,20696.51,366.852,109501.797,27156.939,112852,11043.86,1962939,129047.398,275.222,605.378,5151.649,9450720,389.617],"y":[7.57,8.2,8.81,8.2,3.54,4.1,7.38,5.95,2.36,7.71,2.12,5.75,3.1,3.29,5.16,3.38,8.18,10.28,6.41,8.55,6.87],"text":["SQKM_CNTRY:      462.378<br />total:  7.57<br />Continent: North America","SQKM_CNTRY:      439.942<br />total:  8.20<br />Continent: North America","SQKM_CNTRY:    12867.780<br />total:  8.81<br />Continent: North America","SQKM_CNTRY:  9904700.000<br />total:  8.20<br />Continent: North America","SQKM_CNTRY:    51608.039<br />total:  3.54<br />Continent: North America","SQKM_CNTRY:   110443.000<br />total:  4.10<br />Continent: North America","SQKM_CNTRY:      731.997<br />total:  7.38<br />Continent: North America","SQKM_CNTRY:    48445.039<br />total:  5.95<br />Continent: North America","SQKM_CNTRY:    20696.510<br />total:  2.36<br />Continent: North America","SQKM_CNTRY:      366.852<br />total:  7.71<br />Continent: North America","SQKM_CNTRY:   109501.797<br />total:  2.12<br />Continent: North America","SQKM_CNTRY:    27156.939<br />total:  5.75<br />Continent: North America","SQKM_CNTRY:   112852.000<br />total:  3.10<br />Continent: North America","SQKM_CNTRY:    11043.860<br />total:  3.29<br />Continent: North America","SQKM_CNTRY:  1962939.000<br />total:  5.16<br />Continent: North America","SQKM_CNTRY:   129047.398<br />total:  3.38<br />Continent: North America","SQKM_CNTRY:      275.222<br />total:  8.18<br />Continent: North America","SQKM_CNTRY:      605.378<br />total: 10.28<br />Continent: North America","SQKM_CNTRY:     5151.649<br />total:  6.41<br />Continent: North America","SQKM_CNTRY:  9450720.000<br />total:  8.55<br />Continent: North America","SQKM_CNTRY:      389.617<br />total:  6.87<br />Continent: North America"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(0,191,196,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(0,191,196,1)"}},"hoveron":"points","name":"North America","legendgroup":"North America","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[7706142,27739.721,231.532,19363.891,701.358,1049.99,227.818,12534.9,28.489,266820.188,466161.188,696.525,30.798,2802.675],"y":[9.68,1.05,10.72,2.25,1.77,0.47,4.9,0.91,1.1,8.39,0.79,1.24,1.02,3.01],"text":["SQKM_CNTRY:  7706142.000<br />total:  9.68<br />Continent: Oceania","SQKM_CNTRY:    27739.721<br />total:  1.05<br />Continent: Oceania","SQKM_CNTRY:      231.532<br />total: 10.72<br />Continent: Oceania","SQKM_CNTRY:    19363.891<br />total:  2.25<br />Continent: Oceania","SQKM_CNTRY:      701.358<br />total:  1.77<br />Continent: Oceania","SQKM_CNTRY:     1049.990<br />total:  0.47<br />Continent: Oceania","SQKM_CNTRY:      227.818<br />total:  4.90<br />Continent: Oceania","SQKM_CNTRY:    12534.900<br />total:  0.91<br />Continent: Oceania","SQKM_CNTRY:       28.489<br />total:  1.10<br />Continent: Oceania","SQKM_CNTRY:   266820.188<br />total:  8.39<br />Continent: Oceania","SQKM_CNTRY:   466161.188<br />total:  0.79<br />Continent: Oceania","SQKM_CNTRY:      696.525<br />total:  1.24<br />Continent: Oceania","SQKM_CNTRY:       30.798<br />total:  1.02<br />Continent: Oceania","SQKM_CNTRY:     2802.675<br />total:  3.01<br />Continent: Oceania"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(97,156,255,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(97,156,255,1)"}},"hoveron":"points","name":"Oceania","legendgroup":"Oceania","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null},{"x":[2781013,22174.82,1090353,8507128,742298.188,1141962,256932,211241.297,145497.5,400089.406,1296912,74697.109,178140.797,916560.5],"y":[7.68,6.61,3.93,7.48,7.93,4.27,3.93,7.5,5.09,5.59,4.73,6.92,6.21,7.16],"text":["SQKM_CNTRY:  2781013.000<br />total:  7.68<br />Continent: South America","SQKM_CNTRY:    22174.820<br />total:  6.61<br />Continent: South America","SQKM_CNTRY:  1090353.000<br />total:  3.93<br />Continent: South America","SQKM_CNTRY:  8507128.000<br />total:  7.48<br />Continent: South America","SQKM_CNTRY:   742298.188<br />total:  7.93<br />Continent: South America","SQKM_CNTRY:  1141962.000<br />total:  4.27<br />Continent: South America","SQKM_CNTRY:   256932.000<br />total:  3.93<br />Continent: South America","SQKM_CNTRY:   211241.297<br />total:  7.50<br />Continent: South America","SQKM_CNTRY:   145497.500<br />total:  5.09<br />Continent: South America","SQKM_CNTRY:   400089.406<br />total:  5.59<br />Continent: South America","SQKM_CNTRY:  1296912.000<br />total:  4.73<br />Continent: South America","SQKM_CNTRY:    74697.109<br />total:  6.92<br />Continent: South America","SQKM_CNTRY:   178140.797<br />total:  6.21<br />Continent: South America","SQKM_CNTRY:   916560.500<br />total:  7.16<br />Continent: South America"],"type":"scatter","mode":"markers","marker":{"autocolorscale":false,"color":"rgba(245,100,227,1)","opacity":1,"size":5.66929133858268,"symbol":"circle","line":{"width":1.88976377952756,"color":"rgba(245,100,227,1)"}},"hoveron":"points","name":"South America","legendgroup":"South America","showlegend":true,"xaxis":"x","yaxis":"y","hoverinfo":"text","frame":null}],"layout":{"margin":{"t":47.6147779161478,"r":9.29846409298464,"b":52.2015774180158,"l":48.4821917808219},"font":{"color":"rgba(0,0,0,1)","family":"","size":18.5969281859693},"title":"<b> Per capita alcohol consumption <\/b>","titlefont":{"color":"rgba(0,0,0,1)","family":"","size":18.5969281859693},"xaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-842567.08655,17694535.57555],"tickmode":"array","ticktext":["0.0e+00","5.0e+06","1.0e+07","1.5e+07"],"tickvals":[0,5000000,10000000,15000000],"categoryorder":"array","categoryarray":["0.0e+00","5.0e+06","1.0e+07","1.5e+07"],"nticks":null,"ticks":"outside","tickcolor":"rgba(0,0,0,1)","ticklen":4.64923204649232,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(0,0,0,1)","family":"","size":15.9375674553757},"tickangle":-0,"showline":true,"linecolor":"rgba(0,0,0,1)","linewidth":0.66417600664176,"showgrid":false,"gridcolor":null,"gridwidth":0,"zeroline":false,"anchor":"y","title":"SQKM_CNTRY","titlefont":{"color":"rgba(0,0,0,1)","family":"","size":18.5969281859693},"hoverformat":".2f"},"yaxis":{"domain":[0,1],"automargin":true,"type":"linear","autorange":false,"range":[-0.658,13.818],"tickmode":"array","ticktext":["0","5","10"],"tickvals":[0,5,10],"categoryorder":"array","categoryarray":["0","5","10"],"nticks":null,"ticks":"outside","tickcolor":"rgba(0,0,0,1)","ticklen":4.64923204649232,"tickwidth":0.66417600664176,"showticklabels":true,"tickfont":{"color":"rgba(0,0,0,1)","family":"","size":15.9375674553757},"tickangle":-0,"showline":true,"linecolor":"rgba(0,0,0,1)","linewidth":0.66417600664176,"showgrid":false,"gridcolor":null,"gridwidth":0,"zeroline":false,"anchor":"x","title":"total","titlefont":{"color":"rgba(0,0,0,1)","family":"","size":18.5969281859693},"hoverformat":".2f"},"shapes":[{"type":"rect","fillcolor":null,"line":{"color":null,"width":0,"linetype":[]},"yref":"paper","xref":"paper","x0":0,"x1":1,"y0":0,"y1":1}],"showlegend":true,"legend":{"bgcolor":null,"bordercolor":null,"borderwidth":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":15.9375674553757},"y":0.889763779527559},"annotations":[{"text":"Continent","x":1.02,"y":1,"showarrow":false,"ax":0,"ay":0,"font":{"color":"rgba(0,0,0,1)","family":"","size":18.5969281859693},"xref":"paper","yref":"paper","textangle":-0,"xanchor":"left","yanchor":"bottom","legendTitle":true}],"hovermode":"closest","barmode":"relative"},"config":{"doubleClick":"reset","modeBarButtonsToAdd":[{"name":"Collaborate","icon":{"width":1000,"ascent":500,"descent":-50,"path":"M487 375c7-10 9-23 5-36l-79-259c-3-12-11-23-22-31-11-8-22-12-35-12l-263 0c-15 0-29 5-43 15-13 10-23 23-28 37-5 13-5 25-1 37 0 0 0 3 1 7 1 5 1 8 1 11 0 2 0 4-1 6 0 3-1 5-1 6 1 2 2 4 3 6 1 2 2 4 4 6 2 3 4 5 5 7 5 7 9 16 13 26 4 10 7 19 9 26 0 2 0 5 0 9-1 4-1 6 0 8 0 2 2 5 4 8 3 3 5 5 5 7 4 6 8 15 12 26 4 11 7 19 7 26 1 1 0 4 0 9-1 4-1 7 0 8 1 2 3 5 6 8 4 4 6 6 6 7 4 5 8 13 13 24 4 11 7 20 7 28 1 1 0 4 0 7-1 3-1 6-1 7 0 2 1 4 3 6 1 1 3 4 5 6 2 3 3 5 5 6 1 2 3 5 4 9 2 3 3 7 5 10 1 3 2 6 4 10 2 4 4 7 6 9 2 3 4 5 7 7 3 2 7 3 11 3 3 0 8 0 13-1l0-1c7 2 12 2 14 2l218 0c14 0 25-5 32-16 8-10 10-23 6-37l-79-259c-7-22-13-37-20-43-7-7-19-10-37-10l-248 0c-5 0-9-2-11-5-2-3-2-7 0-12 4-13 18-20 41-20l264 0c5 0 10 2 16 5 5 3 8 6 10 11l85 282c2 5 2 10 2 17 7-3 13-7 17-13z m-304 0c-1-3-1-5 0-7 1-1 3-2 6-2l174 0c2 0 4 1 7 2 2 2 4 4 5 7l6 18c0 3 0 5-1 7-1 1-3 2-6 2l-173 0c-3 0-5-1-8-2-2-2-4-4-4-7z m-24-73c-1-3-1-5 0-7 2-2 3-2 6-2l174 0c2 0 5 0 7 2 3 2 4 4 5 7l6 18c1 2 0 5-1 6-1 2-3 3-5 3l-174 0c-3 0-5-1-7-3-3-1-4-4-5-6z"},"click":"function(gd) { \n        // is this being viewed in RStudio?\n        if (location.search == '?viewer_pane=1') {\n          alert('To learn about plotly for collaboration, visit:\\n https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html');\n        } else {\n          window.open('https://cpsievert.github.io/plotly_book/plot-ly-for-collaboration.html', '_blank');\n        }\n      }"}],"cloud":false},"source":"A","attrs":{"10e759d453e":{"x":{},"y":{},"colour":{},"type":"scatter"}},"cur_data":"10e759d453e","visdat":{"10e759d453e":["function (y) ","x"]},"highlight":{"on":"plotly_click","persistent":false,"dynamic":false,"selectize":false,"opacityDim":0.2,"selected":{"opacity":1},"debounce":0},"base_url":"https://plot.ly"},"evals":["config.modeBarButtonsToAdd.0.click"],"jsHooks":[]}</script>
+<p>Now we can also just use ## Introduction to ggvis</p>
 </div>
 <div id="introduction-to-3d" class="section level2">
 <h2>Introduction to 3D</h2>
@@ -360,13 +520,15 @@ library(geojsonio)</code></pre>
 </div>
 <div id="geographic-plotting" class="section level1">
 <h1>Geographic plotting</h1>
+<p>We can plot two types of geographical plots in R - stationary and interactive. The first one is done with ggplot the second is mainly done with leaflet but note that there are some more packages out there. We’ll start with ggplot</p>
 <div id="ggplot2" class="section level2">
 <h2>ggplot2</h2>
+<p>For this we need a few packages that we uploaded before: <code>maps</code>, <code>mapdata</code>, and <code>ggplot2</code> * The <code>maps</code> package contains a lot of outlines of continents, countries, states, and counties that have been with R for a long time. * The <code>mapdata</code> package contains a few more, higher-resolution outlines. * The <code>maps</code> package comes with a plotting function, but, we will opt to use <code>ggplot2</code> to plot the maps in the <code>maps</code> package. * Recall that <code>ggplot2</code> operates on data frames. Therefore we need some way to translate the maps data into a data frame format the <code>ggplot</code> can use.</p>
+<p>First we’ll create a world map tamplate that we will use to map our data on it</p>
+<pre class="r"><code>w2hr &lt;- map_data(&quot;world2Hires&quot;)</code></pre>
 </div>
 <div id="leaflet" class="section level2">
 <h2>leaflet</h2>
-<p>Read the map shapefile into R. We use geoJSON because it’s a lighter file format for geographical data</p>
-<pre class="r"><code>#Data.vis.shape &lt;- geojsonio::geojson_read(&quot;shapefile.json&quot;, what = &quot;sp&quot;)</code></pre>
 </div>
 </div>
 

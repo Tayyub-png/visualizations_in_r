@@ -73,7 +73,7 @@ data.vis<- data.vis[complete.cases(data.vis),]
 Let's view our data:
 
 ```{r}
-as.tibble(data.vis)
+data.vis
 ```
 Each row in our data is a country. Our columns give data for each country on its population, size (in square km), if it's landlocked or not, if it's an island nation or not, which continent it is on, and the per capita alcohol consumption for 2010: in spirits, beer, wine, and the total consumption.
 
@@ -92,7 +92,7 @@ This basic scatterplot is kind of ugly and uninformative. The good news is this 
 
 ## Colour schemes
 
-Our first step will be colour schemes. The easiest thing to is to use the package 'RColorBrewer'to generate a custom palette from a few nice looking options. With the function 'brewer.pal' you define how many colours you want (6 in our case, for 6 continents), and which  palette you want.
+Our first step will be colour schemes. The easiest thing to is to use the package 'RColorBrewer'to generate a custom palette from a few nice looking options. With the function 'brewer.pal' you define how many colours you want (6 in our case, for 6 continents), and which  palette you want (in this case we use a palette called "Set3" - see the documentation of brewer.pal for all possible palette names).
 
 ```{r}
 my.palette <- brewer.pal(6, "Set3")
@@ -138,13 +138,15 @@ p + theme(legend.title = element_blank()) #remove the title of the legend
 
 ### Axes manipulation
 
-First of all, it's about time we do something about our ugly data. One of our main issues is that the country areas (on the X axis) should be log-transformed. We can transform our data using a simple line of code.
+First of all, it's about time we do something about our ugly data. One of our main issues is that the country areas (on the X axis) should be log-transformed. We can transform our data using a simple line of code, and some functions from the 'scales' package. Here are some examples, but make sure to check the trans() function documentation and pick the type of transformation that fits your data!
 
 ```{r message=FALSE, warning=FALSE}
-p + scale_x_continuous(trans = log10_trans())
+p + scale_x_continuous(trans = log10_trans()) #log10 transformation
+p + scale_x_continuous(trans = sqrt_trans()) #square-root transformation
+p + scale_x_continuous(trans = reverse_trans()) #reverse transformation
 ```
 
-And to make this look a  bit better, let's change the tick labels to have actual numbers:
+And to make this look a  bit better, let's change the tick labels to have actual numbers. We'll do this with the trans_format() function. We tell the function which transformation to apply to the numbers, and the format in which to write the labels.
 
 ```{r}
 p <- p + scale_x_continuous(trans = log10_trans(), labels = trans_format("log10", math_format(10^.x)))
@@ -153,7 +155,7 @@ p
 
 
 You may also want to change the titles of your axes - this is always useful because usually your data will have column names that are short and easy to type, but less informative for a plot you want to publish.
-The expression() function is useful for this, because it allows you to add special characters, as well as create super- and subscripts, italics, etc.
+The expression() function (from base R) is useful for this, because it allows you to add special characters, as well as create super- and subscripts, italics, etc.
 
 ```{r}
 p <- p + labs(x = expression("Area (km"^"2"~")"), y = expression("Consumption (l"/"y"~")"))
@@ -168,6 +170,12 @@ Now we can deal with another problem - this plot is a bit cluttered. It's hard t
 p + facet_grid(Continent ~ .) #facet in the vertical direction
 p + facet_grid(. ~ Continent) #facet in the horizontal direction
 p + facet_wrap( ~ Continent, ncol = 3) #facet in a grid, with a set number of columns (or rows)
+```
+
+Your plot doesn't have to be faceted by a factor that you've mapped. For instance, we can facet our plot by the factor ISLAND, even though it has no aesthetic mapped to it:
+
+```{r}
+p + facet_grid(. ~ ISLAND)
 ```
 
 We've now managed to generate a pretty nice looking plot. You'll see that we all facets have the same range of values in their axes - this allows us to compare the scatterplots in the different levels of our factor (continent), but because they are each in a different "plot", it's a lot less messy and we can see where there is no trend (Europe) and where they might be something going on (Asia).
@@ -186,14 +194,14 @@ p2 <- ggplot(aes(x = Continent, y = total, fill = Continent), data = data.vis) +
 p2
 ```
 
-Now what let's try and combine these two plots - we want to put them both together, side by side.
+Now let's try and combine these two plots - we want to put them both together, side by side.
 First thing we'll do is rotate our violin plot. This is very easily done:
 
 ```{r}
 p2 + coord_flip()
 ```
 
-Now, we'll use the plot_grid() from the package 'cowplot' to draw the two plots side by side.
+Now, we'll use the plot_grid() function from the package 'cowplot' to draw the two plots side by side.
 
 ```{r}
 p <- p + facet_grid(Continent ~ .) + theme(legend.position = "none", strip.background = element_blank(), strip.text = element_blank())
@@ -202,23 +210,19 @@ p3 <- plot_grid(p, p2)
 p3
 ```
 
-
 ## Export
 
 Finally, it's time to export our plot. There are several formats basic R can export to, the most useful of which are JPG, PNG and PDF. The code for them all follows the same basic format.
 
 ```{r}
-# jpeg("C:/visualizations_in_r/myplot.jpg") #make sure to set your pathway!
 jpeg("myplot.jpg")
 p3
 dev.off()
 
-# png("C:/visualizations_in_r/myplot.png")
 png("myplot.png")
 p3
 dev.off()
 
-# pdf("C:/visualizations_in_r/myplot.pdf")
 pdf("myplot.pdf")
 p3
 dev.off()
@@ -229,14 +233,11 @@ dev.off()
 As you've probably noticed, while the PDF file looks ok, the JPG and PNG are really poor quality. However, we can fix this. For instance, we can create a TIFF file with a higher resolution and larger size. Also, we can change the size of the PDF, or export to other, different file formats.
 
 ```{r}
-# tiff("C:/visualizations_in_r/myplot.tiff", height = 20, width = 20, units = "cm", res = 300)
 tiff("myplot.tiff", height = 20, width = 20, units = "cm", res = 300)
 p3
 dev.off()
 
-# pdf("C:/visualizations_in_r/myplot.pdf", height = 20, width = 20)
 pdf("myplot.pdf", height = 20, width = 20)
-
 p3
 dev.off()
 ```
@@ -246,10 +247,34 @@ dev.off()
 After we learned all this the hard way, let's learn the easy way. The 'ggpubr' package is the simple way to create nice looking plots. For instance, we can recreate our violin plot using just one line of code, and even add some analysis to it.
 
 ```{r}
-ggviolin(data.vis, x = "Continent", y = "total", fill = "Continent", palette = witness.me, add = "boxplot", ylab = expression("Consumption (l"/"y"~")")) + geom_jitter(width = .1, alpha = .2) + coord_flip() + theme(legend.position = "none")
+ggviolin(data.vis, x = "Continent", y = "total", fill = "Continent", palette = witness.me, add = c("boxplot", "jitter"), ylab = expression("Consumption (l"/"y"~")"), rotate = T, add.params = list(alpha = .2))
 ```
 
-'ggpubr' has similar types of functions for different types of plots (scatterplots, boxplots, etc.). All look lovely, and require a lot less hassle to generate. It's a package well worth exploring.
+'ggpubr' has similar types of functions for different types of plots (scatterplots, boxplots, etc.). All look lovely, and require a lot less hassle to generate. It's a package well worth exploring. Here a few examples of the types of plots you can generate with 'ggpubr':
+
+```{r}
+#density plots
+ggdensity(data.vis, x = "total", color = "Continent", fill = "Continent", palette = witness.me, facet.by = "Continent", xlab = expression("Consumption (l"/"y"~")")) 
+#we can also mark the mean (or medians) and add tickmarks (rug = T) to show the actual values of the observations
+ggdensity(data.vis, x = "total", add = "mean", rug = T, color = "Continent", fill = "Continent", palette = witness.me, facet.by = "Continent", xlab = expression("Consumption (l"/"y"~")")) 
+```
+
+```{r}
+#ordered bar plots
+ggbarplot(data.vis, x = "CNTRY_NAME", y = "total", color = "Continent", fill = "Continent", palette = witness.me, sort.val = "desc", sort.by.groups = F, x.text.angle = 90, ylab = expression("Consumption (l"/"y"~")"), xlab = "Country") + font("x.text", size = 4)
+```
+
+```{r}
+#Lollipop chart, as an alternative to barplot
+ggdotchart(data.vis, x = "CNTRY_NAME", y = "total", color = "Continent", palette = witness.me, sorting = "descending", rotate = T, group = "Continent", add = "segments", ylab = expression("Consumption (l"/"y"~")"), xlab = "Country") + font("y.text", size = 4)
+```
+
+But really, the best way to learn is to just play around with the package and see what it's capable of.
+
+## EXCERCISE
+Now it's your turn to try!
+We want to know if landlocked countries are home to heavier drinkers - in all three different categories (beer, wine, spirits). So your task is to visualize differences between landlocked and non-landlocked countries in all three of these, in a single plot.
+Use whichever visualization method you are most comfortable with, and you think will display the data best for the question we want to ask. Don't forget - visualization is as much design as it is coding! Try to make your figure clear and concise, but also visually appealing. Try to please your own sense of aesthetic first!
 
 # Interactive visualization
 
@@ -260,7 +285,7 @@ In this part we will learn how to create interactive plots and how to use them o
 Plotly is a grate cross platform package that allows a lot of variation for plotting interactive plots. We will use the R version of the package. Lets start with a simple use of the package, which transformes our ggplots to interactive visualizations with the code ggplotly()
 
 ```{r}
-p <- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data.vis) + geom_point() + ggtitle("Per capita alcohol consumption")
+p <- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data.vis) + geom_point() + ggtitle("Per capita alcohol consumption") + scale_colour_manual(values = witness.me) + scale_x_continuous(trans = log10_trans())
 p
 
 ggplotly(p)

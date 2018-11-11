@@ -29,20 +29,19 @@ We will use data on per capita alcohol consumption in the countries of the world
 
 First thing is to make sure you have all the libraries uploaded for this session.
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 if (!require("tidyverse")) install.packages("tidyverse")
 if (!require("plotly")) install.packages("plotly")
-library(plotly)
-library(leaflet)
-library(geojsonio)
-library(ggpubr)
-library(ggvis)
-library(RColorBrewer)
-library(extrafont)
-library(cowplot)
-library(scales)
-library(ggmap)
-library(mapdata)
+if (!require("leaflet")) install.packages("leaflet")
+if (!require("geojsonio")) install.packages("geojsonio")
+if (!require("ggpubr")) install.packages("ggpubr")
+if (!require("ggvis")) install.packages("ggvis")
+if (!require("RColorBrewer")) install.packages("RColorBrewer")
+if (!require("extrafont")) install.packages("extrafont")
+if (!require("cowplot")) install.packages("cowplot")
+if (!require("scales")) install.packages("scales")
+if (!require("ggmap")) install.packages("ggmap")
+if (!require("mapdata")) install.packages("mapdata")
 if (!require("webshot")) install.packages("webshot")
 if (!require("htmlwidgets")) install.packages("htmlwidgets")
 if (!require("processx")) install.packages("processx")
@@ -65,25 +64,26 @@ or always add it when you read the file in.
 
 ```{r}
 #upload the spatial file using geojson and specifying to R that it's a shapefile
-data.vis.sp<- geojsonio::geojson_read("country_alcohol.geojson",
+data_vis.sp<- geojsonio::geojson_read("country_alcohol.geojson",
   what = "sp")
 #save the data from the shapefile into a tibble
-data.vis<- as_tibble(data.vis.sp@data)
+data_vis<- as_tibble(data_vis.sp@data)
 #manipulate the data a bit to make population numeric
-data.vis<- data.vis %>% 
+data_vis<- data_vis %>% 
   mutate(POP_CNTRY=as.character(POP_CNTRY)) %>% 
   filter(POP_CNTRY!="-99999") %>% 
   mutate(POP_CNTRY=as.numeric(POP_CNTRY))
 #remove all the lines with NA's. The function complete.cases removes all the lines that have NA's in them somewhere
-data.vis<- data.vis[complete.cases(data.vis),]
-#look at the data. tibble equivalent to str
-glimpse(data.vis)
+data_vis<- data_vis[complete.cases(data_vis),]
+
 ```
  
 Let's view our data:
 
 ```{r}
-data.vis
+data_vis
+#look at the data. tibble equivalent to str
+glimpse(data_vis)
 ```
 Each row in our data is a country. Our columns give data for each country on its population, size (in square km), if it's landlocked or not, if it's an island nation or not, which continent it is on, and the per capita alcohol consumption for 2010: in spirits, beer, wine, and the total consumption.
 
@@ -94,7 +94,7 @@ Now, let's start plotting!
 First, we'll plot some data. We'll plot the size of country (log-transformed) on the x axis, and the total alcohol consumption on the y axis. We'll also colour our data based on continent.
 
 ```{r message=FALSE, warning=FALSE}
-p <- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data.vis) + geom_point() + ggtitle("Per capita alcohol consumption")
+p <- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data_vis) + geom_point() + ggtitle("Per capita alcohol consumption")
 p
 ```
 
@@ -193,7 +193,7 @@ We've now managed to generate a pretty nice looking plot. You'll see that we all
 Now let's try to do something a bit more interesting. Let's try to generate a different plot that allows us to check for differences in alcohol consumption between continents, without taking into acount area. We'll do this using a violin plot, which is a slightly fancier and more informative version of a boxplot. We'll use the same colour palette as we did for the scatterplot.
 
 ```{r}
-p2 <- ggplot(aes(x = Continent, y = total, fill = Continent), data = data.vis) + 
+p2 <- ggplot(aes(x = Continent, y = total, fill = Continent), data = data_vis) + 
   geom_violin(trim = F) +
   geom_boxplot(width = .1) +
   geom_jitter(height = 0, width = .1, alpha = .2) +
@@ -215,7 +215,7 @@ Now, we'll use the plot_grid() function from the package 'cowplot' to draw the t
 
 ```{r}
 p <- p + facet_grid(Continent ~ .) + theme(legend.position = "none", strip.background = element_blank(), strip.text = element_blank())
-p2 <- p2 + coord_flip() + theme(legend.position = "none", axis.title.y = element_blank(), plot.title = element_text(colour = "white")) + scale_x_discrete(limits = rev(levels(data.vis$Continent)))
+p2 <- p2 + coord_flip() + theme(legend.position = "none", axis.title.y = element_blank(), plot.title = element_text(colour = "white")) + scale_x_discrete(limits = rev(levels(data_vis$Continent)))
 p3 <- plot_grid(p, p2)
 p3
 ```
@@ -257,26 +257,26 @@ dev.off()
 After we learned all this the hard way, let's learn the easy way. The 'ggpubr' package is the simple way to create nice looking plots. For instance, we can recreate our violin plot using just one line of code, and even add some analysis to it.
 
 ```{r}
-ggviolin(data.vis, x = "Continent", y = "total", fill = "Continent", palette = witness.me, add = c("boxplot", "jitter"), ylab = expression("Consumption (l"/"y"~")"), rotate = T, add.params = list(alpha = .2))
+ggviolin(data_vis, x = "Continent", y = "total", fill = "Continent", palette = witness.me, add = c("boxplot", "jitter"), ylab = expression("Consumption (l"/"y"~")"), rotate = T, add.params = list(alpha = .2))
 ```
 
 'ggpubr' has similar types of functions for different types of plots (scatterplots, boxplots, etc.). All look lovely, and require a lot less hassle to generate. It's a package well worth exploring. Here a few examples of the types of plots you can generate with 'ggpubr':
 
 ```{r}
 #density plots
-ggdensity(data.vis, x = "total", color = "Continent", fill = "Continent", palette = witness.me, facet.by = "Continent", xlab = expression("Consumption (l"/"y"~")")) 
+ggdensity(data_vis, x = "total", color = "Continent", fill = "Continent", palette = witness.me, facet.by = "Continent", xlab = expression("Consumption (l"/"y"~")")) 
 #we can also mark the mean (or medians) and add tickmarks (rug = T) to show the actual values of the observations
-ggdensity(data.vis, x = "total", add = "mean", rug = T, color = "Continent", fill = "Continent", palette = witness.me, facet.by = "Continent", xlab = expression("Consumption (l"/"y"~")")) 
+ggdensity(data_vis, x = "total", add = "mean", rug = T, color = "Continent", fill = "Continent", palette = witness.me, facet.by = "Continent", xlab = expression("Consumption (l"/"y"~")")) 
 ```
 
 ```{r}
 #ordered bar plots
-ggbarplot(data.vis, x = "CNTRY_NAME", y = "total", color = "Continent", fill = "Continent", palette = witness.me, sort.val = "desc", sort.by.groups = F, x.text.angle = 90, ylab = expression("Consumption (l"/"y"~")"), xlab = "Country") + font("x.text", size = 4)
+ggbarplot(data_vis, x = "CNTRY_NAME", y = "total", color = "Continent", fill = "Continent", palette = witness.me, sort.val = "desc", sort.by.groups = F, x.text.angle = 90, ylab = expression("Consumption (l"/"y"~")"), xlab = "Country") + font("x.text", size = 4)
 ```
 
 ```{r}
 #Lollipop chart, as an alternative to barplot
-ggdotchart(data.vis, x = "CNTRY_NAME", y = "total", color = "Continent", palette = witness.me, sorting = "descending", rotate = T, group = "Continent", add = "segments", ylab = expression("Consumption (l"/"y"~")"), xlab = "Country") + font("y.text", size = 4)
+ggdotchart(data_vis, x = "CNTRY_NAME", y = "total", color = "Continent", palette = witness.me, sorting = "descending", rotate = T, group = "Continent", add = "segments", ylab = expression("Consumption (l"/"y"~")"), xlab = "Country") + font("y.text", size = 4)
 ```
 
 But really, the best way to learn is to just play around with the package and see what it's capable of.
@@ -297,7 +297,7 @@ It can be used in two ways, the simplest use of the package, is to use `ggplotly
 
 ```{r}
 #create a ggplot object
-p <- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data.vis) + geom_point() + ggtitle("Per capita alcohol consumption") + scale_colour_manual(values = witness.me) + scale_x_continuous(trans = log10_trans())
+p <- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data_vis) + geom_point() + ggtitle("Per capita alcohol consumption") + scale_colour_manual(values = witness.me) + scale_x_continuous(trans = log10_trans())
 p
 #transform in to an interactive object
 ggplotly(p)
@@ -313,25 +313,25 @@ The `plot_ly()` function uses the pipe symbol `%>%` to add traces which are equi
 
 ```{r message=FALSE, warning=FALSE}
 
-plot_ly(data.vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter')
+plot_ly(data_vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter')
 ```
 
 Now lets add a descrete variable to use as color variable in the plot. We use whether it's and island or not
 ```{r message=FALSE, warning=FALSE}
-plot_ly(data.vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter',color =~ ISLAND)
+plot_ly(data_vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter',color =~ ISLAND)
 
 ```
 
 We can change the colors to what we want
 ```{r message=FALSE, warning=FALSE}
-plot_ly(data.vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter',color =~ISLAND,colors = "Set1")
+plot_ly(data_vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter',color =~ISLAND,colors = "Set1")
 ```
 
 We can change the ledgend position
 
 ```{r message=FALSE, warning=FALSE}
 #legende bottom
-plot_ly(data.vis,
+plot_ly(data_vis,
         x=~log10(SQKM_CNTRY),
         y=~beer, 
         type = 'scatter',
@@ -340,7 +340,7 @@ plot_ly(data.vis,
    layout(legend = list(orientation = 'h'))
   
 #legend witin plot
-plot_ly(data.vis,
+plot_ly(data_vis,
         x=~log10(SQKM_CNTRY),
         y=~beer, 
         type = 'scatter',
@@ -349,7 +349,7 @@ plot_ly(data.vis,
 layout(legend = list(x = 0.1, y = 0.9))
 
 #no ledgend
-plot_ly(data.vis,
+plot_ly(data_vis,
         x=~log10(SQKM_CNTRY),
         y=~beer, 
         type = 'scatter',
@@ -361,7 +361,7 @@ plot_ly(data.vis,
 
 Change axis names
 ```{r message=FALSE, warning=FALSE}
-plot_ly(data.vis,
+plot_ly(data_vis,
         x=~log10(SQKM_CNTRY),
         y=~beer, 
         type = 'scatter',
@@ -387,7 +387,7 @@ x = list(title = "where in the world", titlefont = f1)
 y = list(title = "Beer consumption", titlefont = f2)
 
 #make the plot
-plot_ly(data.vis,
+plot_ly(data_vis,
         x=~log10(SQKM_CNTRY),
         y=~beer, 
         type = 'scatter',
@@ -401,7 +401,7 @@ layout(legend = list(x = 0.1, y = 0.9),
 We can plot side by side for each factor in the descrete variable. Make sure that the data you want to plot is in a long format.
 
 ```{r message=FALSE, warning=FALSE}
-p <- data.vis %>%
+p <- data_vis %>%
   #transform the variable that will be used to plot to integer type
   transform(id = as.integer(factor(ISLAND))) %>%
   #plot the data where X is the predictor, y is the response, color is thedivider, yaxis is the variable to use to divide the plot
@@ -415,7 +415,7 @@ p
 We can put lines instead of dots by removing the "scatter" as type and adding the line `add_lines()`
 
 ```{r message=FALSE, warning=FALSE}
-p <- data.vis %>%
+p <- data_vis %>%
   #transform the variable that will be used to plot to integer type
   transform(id = as.integer(factor(ISLAND))) %>%
   #plot the data where X is the predictor, y is the response, color is thedivider, yaxis is the variable to use to divide the plot
@@ -432,7 +432,7 @@ p
 #### Change the size of the dots based on a variable
 ```{r message=FALSE, warning=FALSE}
 #change size for all dots
-p<- plot_ly(data.vis,
+p<- plot_ly(data_vis,
         x=~log10(SQKM_CNTRY),
         y=~wine, 
         type = 'scatter',
@@ -444,7 +444,7 @@ p<- plot_ly(data.vis,
 p
 
 #change size based on a continious factor
-p<- plot_ly(data.vis,
+p<- plot_ly(data_vis,
         x=~log10(SQKM_CNTRY),
         y=~log10(POP_CNTRY), 
         type = 'scatter',
@@ -458,13 +458,13 @@ p
 
 #### Do line plots
 ```{r}
-plot_ly(data.vis, x = ~log10(POP_CNTRY), y = ~log10(SQKM_CNTRY)) %>%
+plot_ly(data_vis, x = ~log10(POP_CNTRY), y = ~log10(SQKM_CNTRY)) %>%
   add_lines(color = ~LANDLOCKED, colors = "Set1", alpha = 0.9)
 ```
 
 #### Barplot 
 ```{r}
-p2 <- data.vis %>%
+p2 <- data_vis %>%
   dplyr::count(Continent) %>%
   plot_ly(x = ~Continent, y = ~n) %>% 
   add_bars()
@@ -474,7 +474,7 @@ p2 <- data.vis %>%
 
 ```{r message=FALSE, warning=FALSE}
 # number of wines by continent and whether its and island (n)
-cc <- count(data.vis, Continent, ISLAND)
+cc <- count(data_vis, Continent, ISLAND)
 # number of diamonds by Continent (nn)
 cc2 <- left_join(cc, count(cc, Continent, wt = n))
 cc2 %>%
@@ -489,12 +489,12 @@ cc2 %>%
 
 ```{r message=FALSE, warning=FALSE}
 #Standard boxplot
-p <- plot_ly(data.vis, y = ~total, color = I("darkgreen"), 
+p <- plot_ly(data_vis, y = ~total, color = I("darkgreen"), 
              boxpoints = "suspectedoutliers")%>% 
   add_boxplot(x = ~Continent)
 p
 #faceted boxplot
-p<- plot_ly(data.vis, x = ~wine, y = ~interaction(ISLAND, Continent)) %>%
+p<- plot_ly(data_vis, x = ~wine, y = ~interaction(ISLAND, Continent)) %>%
   add_boxplot(color = ~ISLAND) %>%
   layout(yaxis = list(title = ""), margin = list(l = 100))
 p
@@ -515,9 +515,129 @@ Then write
 # orca(p, file='image.png',width = 10,height = 10)
 ```
 
+#### To summarize
+__Pros__: A strong tool for interactive ploting especially if you want to use Shiny.
+__Cons__: Syntex is not intuetive and needs some time to get used to if you don't know JS
 
 ## Introduction to ggvis
+`ggvis` is a good alternative to `plotly` and to `ggplot` because the structure of the object is similar to `ggplot2` but with ` %>% ` instead of `+`. To use the package we will use `ggvis()`. 
+I will show here a few examples of how to use ggvis and in the end you can find a list of links that can be useful to deepen your understanding in the package.
 
+### Basic `ggvis()` plots
+The basic plots are static just as ggplot, but perhaps need less writing to produce.
+
+#### Scatterplot
+We'll start with a scatterplot
+```{r}
+p<- data_vis %>% 
+  ggvis(x =~log10(POP_CNTRY),y =~spirits) %>% 
+  layer_points()
+p
+```
+
+You can add more variables to the plot by mapping them to other visual properties like `fill`, `stroke`, `size` and `shape`.
+```{r}
+data_vis %>% 
+  ggvis(x =~log10(POP_CNTRY),
+        y =~spirits,fill=~Continent,size =~wine,shape =~ISLAND) %>% 
+  layer_points()
+```
+
+To use a fix color or size instead of a variable, use `:=`
+```{r}
+data_vis %>% 
+  ggvis(x =~log10(POP_CNTRY),y =~spirits,fill:="red",size :=30,shape :="square") %>% 
+  layer_points()
+```
+
+#### Add grouping with `group_by()`
+```{r}
+data_vis %>% 
+ggvis(x = ~wine, y = ~beer) %>% 
+  layer_points(fill = ~Continent) %>%
+  group_by(Continent) %>% 
+  layer_model_predictions(model = "lm",se = T)
+```
+
+#### Fix legend
+
+```{r}
+data_vis %>% 
+ggvis(x = ~wine, y = ~beer) %>% 
+  layer_points(fill = ~Continent,size =~total) %>%
+  group_by(Continent) %>% 
+ add_legend(c("size", "fill"),
+            orient = "left")
+```
+
+#### Histogram
+
+```{r}
+data_vis %>% 
+  ggvis(~spirits,fill:="darkgreen") %>% 
+  layer_histograms()
+```
+
+
+#### Barplot
+
+```{r}
+data_vis %>% 
+  ggvis(~log10(POP_CNTRY), ~wine) %>%
+  layer_bars(width = 0.04)
+```
+
+#### Line plot
+
+```{r}
+data_vis %>% 
+  ggvis(~log10(POP_CNTRY), ~log10(SQKM_CNTRY)) %>%
+  layer_lines()
+```
+
+#### Boxplot
+
+```{r}
+data_vis %>% 
+  ggvis(x=~Continent, y=~wine,fill:="darkblue") %>% 
+  layer_boxplots()
+```
+
+#### Make the plot interactive
+`ggvis` gives an option of interactive plotting. It is  different interactive plotting than we saw in plotly but maybe useful for other things. 
+For example we can allows the user to change the size of the points and the transperacy using a slider
+```{r}
+#add sliders to the size and the opacity
+data_vis %>% 
+  ggvis(x =~log10(POP_CNTRY),
+        y =~spirits,
+        fill:="red",
+        size := input_slider(10, 300),
+        opacity := input_slider(0, 1)
+        ) %>% 
+  layer_points()
+```
+
+Input a check box
+```{r message=FALSE, warning=FALSE}
+
+model_type <- input_checkbox(label = "Use flexible curve",
+  map = function(val) if(val) "loess" else "lm")
+ggvis(data = data_vis,x=~total, y=~spirits) %>%
+  layer_model_predictions(model = model_type)
+```
+
+Add an input select bar
+
+
+
+
+
+Here is a good comperison review of `ggplot2` vs. `ggvis` and the difference between them 
+https://stats.stackexchange.com/questions/117078/for-plotting-with-r-should-i-learn-ggplot2-or-ggvis/117080
+
+Here is  a good comparison between the different available packages for plotting in R
+http://ouzor.github.io/blog/2014/11/21/interactive-visualizations.html
 ## Introduction to 3D
 
 

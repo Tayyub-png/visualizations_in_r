@@ -25,7 +25,7 @@ In this workshop we will focus three topics:
 
 3. How to create geographic visualizations
 
-We will use data on per capita alcohol consumption in the countries of the world in 2010. At first, we will explore the data by generating typical plots. We will learn how to manipulate and design these plots to make them publication worthy, and how to turn them into interactive plots. We will then use the same data in ashapefile format to learn how to plot the data on a global map.
+We will use data on per capita alcohol consumption in the countries of the world in 2010. At first, we will explore the data by generating typical plots. We will learn how to manipulate and design these plots to make them publication worthy, and how to turn them into interactive plots. We will then use the same data in shapefile format to learn how to plot the data on a global map.
 
 First thing is to make sure you have all the libraries uploaded for this session.
 
@@ -64,17 +64,17 @@ or always add it when you read the file in.
 
 ```{r}
 #upload the spatial file using geojson and specifying to R that it's a shapefile
-data_vis.sp<- geojsonio::geojson_read("country_alcohol.geojson",
+data_vis.sp <- geojsonio::geojson_read("country_alcohol.geojson",
   what = "sp")
 #save the data from the shapefile into a tibble
-data_vis<- as_tibble(data_vis.sp@data)
+data_vis <- as_tibble(data_vis.sp@data)
 #manipulate the data a bit to make population numeric
-data_vis<- data_vis %>% 
-  mutate(POP_CNTRY=as.character(POP_CNTRY)) %>% 
-  filter(POP_CNTRY!="-99999") %>% 
-  mutate(POP_CNTRY=as.numeric(POP_CNTRY))
+data_vis <- data_vis %>% 
+  mutate(POP_CNTRY = as.character(POP_CNTRY)) %>% 
+  filter(POP_CNTRY != "-99999") %>% 
+  mutate(POP_CNTRY = as.numeric(POP_CNTRY))
 #remove all the lines with NA's. The function complete.cases removes all the lines that have NA's in them somewhere
-data_vis<- data_vis[complete.cases(data_vis),]
+data_vis <- data_vis[complete.cases(data_vis), ]
 
 ```
  
@@ -85,16 +85,21 @@ data_vis
 #look at the data. tibble equivalent to str
 glimpse(data_vis)
 ```
-Each row in our data is a country. Our columns give data for each country on its population, size (in square km), if it's landlocked or not, if it's an island nation or not, which continent it is on, and the per capita alcohol consumption for 2010: in spirits, beer, wine, and the total consumption.
+Each row in our data is a country. Our columns give data for each country on its population, area (in square km), if it's landlocked or not, if it's an island nation or not, which continent it is on, and the per capita alcohol consumption for 2010: in spirits, beer, wine, and the total consumption.
 
 Now, let's start plotting!
 
 # Publication quality plots
 
-First, we'll plot some data. We'll plot the size of country (log-transformed) on the x axis, and the total alcohol consumption on the y axis. We'll also colour our data based on continent.
+First, we'll plot some data. We'll plot the area of the country on the x axis, and the total alcohol consumption on the y axis. We'll also colour our data based on continent.
 
 ```{r message=FALSE, warning=FALSE}
-p <- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data_vis) + geom_point() + ggtitle("Per capita alcohol consumption")
+p <- ggplot(aes(x = SQKM_CNTRY,
+                y = total,
+                colour = Continent),
+            data = data_vis) +
+  geom_point() +
+  ggtitle("Per capita alcohol consumption")
 p
 ```
 
@@ -102,14 +107,15 @@ This basic scatterplot is kind of ugly and uninformative. The good news is this 
 
 ## Colour schemes
 
-Our first step will be colour schemes. The easiest thing to is to use the package 'RColorBrewer'to generate a custom palette from a few nice looking options. With the function 'brewer.pal' you define how many colours you want (6 in our case, for 6 continents), and which  palette you want (in this case we use a palette called "Set3" - see the documentation of brewer.pal for all possible palette names).
+Our first step will be colour schemes. The easiest thing to do is to use the package 'RColorBrewer'to generate a custom palette from a few nice looking options. With the function brewer.pal() you define how many colours you want (6 in our case, for 6 continents), and which  palette you want (in this case we use a palette called "Set3" - see the documentation of brewer.pal() for all available palettes).
 
 ```{r}
 my.palette <- brewer.pal(6, "Set3")
 p + scale_color_manual(values = my.palette)
 ```
 
-We can also generate custom color palettes using online tools. There are many different online tools to generate colour palettes, and in this tutorial we will try one nifty one, found on this website: https://palettegenerator.com/ So we'll use this one to make an epic Max Max colour palette!
+We can also generate custom colour palettes using online tools. There are many different online tools to generate colour palettes, and in this tutorial we will try one nifty one, found on this website: https://palettegenerator.com/ - this allows you to generate custom colour palettes from pictures you upload.
+So we'll use this one to make an epic Mad Max colour palette!
 
 ```{r message=FALSE, warning=FALSE}
 witness.me <- c("#DE8136", "#19191B", "#F6CAB1", "#533927", "#986039", "#166268")
@@ -117,22 +123,24 @@ p <- p + scale_color_manual(values = witness.me)
 p
 ```
 
-We'll stick with this palette for the rest of the tutorial.
+Remember: colour palettes can be subjective, and not everyone will find the same colour palettes attractive as you do. But custom colour palettes can be useful for creating a unique visual style, which can differentiate your plots from similar looking ones, and also create a consistent visual through-line in different plots in the same project.
+And don't forget - when you're preparing plots for publications, some of your audience may be colour-blind. Some journals will specifically ask for colour schemes that can be discerned by colour-blind people.
 
 ## Theme layers
 
-Now, let's try and make the plot look a bit better. We can do this using the theme options - theme() has a LOT of different arguments that let you change the way your plot looks. You can change the background, the axes, the gridlines, the fonts, the titles, and the legend.
+Theme layers are where you do most of your ggplot customization. theme() has a LOT of different arguments that let you change the way your plot looks. You can change the background, the axes, the gridlines, the fonts, the titles, and the legend.
 Modifying elements in the theme is simple, but notice that different elements inherit different functions. For instance, modifying text elements is done using element_text(), whereas modifying line elements is done using element_line(). The one exception is element_blank() - use this for (almost) any type of element that you want to remove from the plot completely.
 Here are a few useful examples:
 
 ```{r message=FALSE, warning=FALSE}
-p + theme(text = element_text(size = 16)) #change the font size
+p + theme(text = element_text(size = 25)) #change the font size
 p + theme(text = element_text(family = "Comic Sans MS")) #change the font family (this is horrible, never use comic sans)
-p + theme(panel.grid = element_blank()) #remove gridlines
+p + theme(panel.grid.major = element_line(colour = "grey")) #add gridlines
 p + theme(panel.background = element_rect(fill = "black")) #change color of background
-p + theme(axis.line = element_line(colour = "black")) #add axis lines
-p <- p + theme(panel.grid = element_blank(), axis.line = element_line(colour = "black")) #make several changes together
-p
+p + theme(axis.line = element_blank()) #remove axis lines
+p + theme(panel.grid.major = element_line(colour = "grey"),
+          panel.background = element_rect(fill = "black"),
+          axis.line = element_blank()) #make several changes together
 
 ```
 
@@ -142,7 +150,7 @@ One of the most useful things you can do is to manipulate the legend. You can re
 
 ```{r message=FALSE, warning=FALSE}
 p + theme(legend.position = "none") #remove the legend
-p + theme(legend.position = c(.1,.75)) #move the legend to a different position
+p + theme(legend.position = c(.1, .75)) #move the legend to a different position
 p + theme(legend.title = element_blank()) #remove the title of the legend
 ```
 
@@ -159,7 +167,8 @@ p + scale_x_continuous(trans = reverse_trans()) #reverse transformation
 And to make this look a  bit better, let's change the tick labels to have actual numbers. We'll do this with the trans_format() function. We tell the function which transformation to apply to the numbers, and the format in which to write the labels.
 
 ```{r}
-p <- p + scale_x_continuous(trans = log10_trans(), labels = trans_format("log10", math_format(10^.x)))
+p <- p + scale_x_continuous(trans = log10_trans(),
+                            labels = trans_format("log10", math_format(10^.x)))
 p
 ```
 
@@ -168,21 +177,22 @@ You may also want to change the titles of your axes - this is always useful beca
 The expression() function (from base R) is useful for this, because it allows you to add special characters, as well as create super- and subscripts, italics, etc.
 
 ```{r}
-p <- p + labs(x = expression("Area (km"^"2"~")"), y = expression("Consumption (l"/"y"~")"))
+p <- p + labs(x = expression("Area (km"^"2"~")"),
+              y = expression("Consumption (l"/"y"~")"))
 p
 ```
 
 ## Facets, rotations, etc.
 
-Now we can deal with another problem - this plot is a bit cluttered. It's hard to tell the different continents from one another, which makes it difficult to identify trends. We can solve this via facetting - this is a cool tool that allows us to break up our one plot into several similar plots - they all have the same axes, but they are separated by the factor (continents in this case).
+Now we can deal with another problem - this plot is a bit cluttered. It's hard to tell the different continents from one another, which makes it difficult to identify trends. We can solve this via facetting - this is a cool tool that allows us to break up our one plot into several similar plots - they all have the same axes, but they are separated by the chosen factor (continents in this case).
 
 ```{r}
 p + facet_grid(Continent ~ .) #facet in the vertical direction
 p + facet_grid(. ~ Continent) #facet in the horizontal direction
-p + facet_wrap( ~ Continent, ncol = 3) #facet in a grid, with a set number of columns (or rows)
+p + facet_wrap( ~ Continent,ncol = 3) #facet in a grid, with a set number of columns (or rows)
 ```
 
-Your plot doesn't have to be faceted by a factor that you've mapped. For instance, we can facet our plot by the factor ISLAND, even though it has no aesthetic mapped to it:
+Your plot doesn't have to be facetted by a factor that you've mapped. For instance, we can facet our plot by the factor ISLAND, even though it has no aesthetic mapped to it:
 
 ```{r}
 p + facet_grid(. ~ ISLAND)
@@ -190,16 +200,25 @@ p + facet_grid(. ~ ISLAND)
 
 We've now managed to generate a pretty nice looking plot. You'll see that we all facets have the same range of values in their axes - this allows us to compare the scatterplots in the different levels of our factor (continent), but because they are each in a different "plot", it's a lot less messy and we can see where there is no trend (Europe) and where they might be something going on (Asia).
 
+Remember: facets can be very useful, but sometimes they can be detrimental. For instance, if you want to show that your trends DO NOT differ between different levels of a factor, it may be easier to show how they overlap without using facetting.
+
 Now let's try to do something a bit more interesting. Let's try to generate a different plot that allows us to check for differences in alcohol consumption between continents, without taking into acount area. We'll do this using a violin plot, which is a slightly fancier and more informative version of a boxplot. We'll use the same colour palette as we did for the scatterplot.
 
 ```{r}
-p2 <- ggplot(aes(x = Continent, y = total, fill = Continent), data = data_vis) + 
+p2 <- ggplot(aes(x = Continent,
+                 y = total,
+                 fill = Continent),
+             data = data_vis) + 
   geom_violin(trim = F) +
   geom_boxplot(width = .1) +
-  geom_jitter(height = 0, width = .1, alpha = .2) +
+  geom_jitter(height = 0,
+              width = .1,
+              alpha = .2) +
   scale_fill_manual(values = witness.me) +
-  theme(panel.grid = element_blank(), axis.line = element_line(colour = "black")) +
-  labs(x = "Continent", y = expression("Consumption (l"/"y"~")")) +
+  theme(panel.grid = element_blank(),
+        axis.line = element_line(colour = "black")) +
+  labs(x = "Continent",
+       y = expression("Consumption (l"/"y"~")")) +
   ggtitle("Per capita alcohol consumption")
 p2
 ```
@@ -214,15 +233,22 @@ p2 + coord_flip()
 Now, we'll use the plot_grid() function from the package 'cowplot' to draw the two plots side by side.
 
 ```{r}
-p <- p + facet_grid(Continent ~ .) + theme(legend.position = "none", strip.background = element_blank(), strip.text = element_blank())
-p2 <- p2 + coord_flip() + theme(legend.position = "none", axis.title.y = element_blank(), plot.title = element_text(colour = "white")) + scale_x_discrete(limits = rev(levels(data_vis$Continent)))
-p3 <- plot_grid(p, p2)
+p <- p + facet_grid(Continent ~ .) +
+  theme(legend.position = "none",
+        strip.background = element_blank(),
+        strip.text = element_blank())
+p2 <- p2 + coord_flip() +
+  theme(legend.position = "none",
+        axis.title.y = element_blank(),
+        plot.title = element_text(colour = "white")) +
+  scale_x_discrete(limits = rev(levels(data_vis$Continent)))
+p3 <- plot_grid(p, p2, ncol = 2)
 p3
 ```
 
 ## Export
 
-Finally, it's time to export our plot. There are several formats basic R can export to, the most useful of which are JPG, PNG and PDF. The code for them all follows the same basic format.
+Finally, it's time to export our plot. There are several formats basic R can export to, the most useful of which are probably JPG, PNG and PDF. The code for them all follows the same basic format.
 
 ```{r message=FALSE, warning=FALSE}
 jpeg("myplot.jpg")
@@ -240,7 +266,7 @@ dev.off()
 
 ### High quality files
 
-As you've probably noticed, while the PDF file looks ok, the JPG and PNG are really poor quality. However, we can fix this. For instance, we can create a TIFF file with a higher resolution and larger size. Also, we can change the size of the PDF, or export to other, different file formats.
+As you've probably noticed, while the PDF file looks ok, the JPG and PNG are really poor quality. However, we can fix this. For instance, we can create a TIFF file with a higher dpi and larger dimensions. Also, we can change the size of the PDF, or export to other, different file formats.
 
 ```{r}
 tiff("myplot.tiff", height = 20, width = 20, units = "cm", res = 300)
@@ -252,31 +278,78 @@ p3
 dev.off()
 ```
 
+Tip: pdf() is super useful! The function has arguments to e.g. change the font family, combine different plots to a single file, choose the target paper size, etc. It's highly recommended to check the function documentation!
+
 ##ggpubr
 
-After we learned all this the hard way, let's learn the easy way. The 'ggpubr' package is the simple way to create nice looking plots. For instance, we can recreate our violin plot using just one line of code, and even add some analysis to it.
+After we learned all this the hard way, let's learn the easy way. The 'ggpubr' package is the simple way to create nice looking plots. 'ggpubr' basically compressed all of the different ggplot functions (geoms, themes, scales, etc.) into a single function - there's a different function for different geoms (e.g. ggboxplot() or gghistogram()), and all of the different theme options etc. are written as arguments in the function.
+For instance, we can recreate our violin plot using just one line of code.
 
 ```{r}
-ggviolin(data_vis, x = "Continent", y = "total", fill = "Continent", palette = witness.me, add = c("boxplot", "jitter"), ylab = expression("Consumption (l"/"y"~")"), rotate = T, add.params = list(alpha = .2))
+ggviolin(data_vis,
+         x = "Continent",
+         y = "total",
+         fill = "Continent",
+         palette = witness.me,
+         add = c("boxplot", "jitter"),
+         ylab = expression("Consumption (l"/"y"~")"),
+         rotate = T,
+         add.params = list(alpha = .2))
 ```
 
 'ggpubr' has similar types of functions for different types of plots (scatterplots, boxplots, etc.). All look lovely, and require a lot less hassle to generate. It's a package well worth exploring. Here a few examples of the types of plots you can generate with 'ggpubr':
 
 ```{r}
 #density plots
-ggdensity(data_vis, x = "total", color = "Continent", fill = "Continent", palette = witness.me, facet.by = "Continent", xlab = expression("Consumption (l"/"y"~")")) 
+ggdensity(data_vis,
+          x = "total",
+          color = "Continent",
+          fill = "Continent",
+          palette = witness.me,
+          facet.by = "Continent",
+          xlab = expression("Consumption (l"/"y"~")")) 
 #we can also mark the mean (or medians) and add tickmarks (rug = T) to show the actual values of the observations
-ggdensity(data_vis, x = "total", add = "mean", rug = T, color = "Continent", fill = "Continent", palette = witness.me, facet.by = "Continent", xlab = expression("Consumption (l"/"y"~")")) 
+ggdensity(data_vis,
+          x = "total",
+          add = "mean",
+          rug = T,
+          color = "Continent",
+          fill = "Continent",
+          palette = witness.me,
+          facet.by = "Continent",
+          xlab = expression("Consumption (l"/"y"~")")) 
 ```
 
 ```{r}
 #ordered bar plots
-ggbarplot(data_vis, x = "CNTRY_NAME", y = "total", color = "Continent", fill = "Continent", palette = witness.me, sort.val = "desc", sort.by.groups = F, x.text.angle = 90, ylab = expression("Consumption (l"/"y"~")"), xlab = "Country") + font("x.text", size = 4)
+ggbarplot(data_vis,
+          x = "CNTRY_NAME",
+          y = "total",
+          color = "Continent",
+          fill = "Continent",
+          palette = witness.me,
+          sort.val = "desc",
+          sort.by.groups = F,
+          x.text.angle = 90,
+          ylab = expression("Consumption (l"/"y"~")"),
+          xlab = "Country") +
+  font("x.text", size = 4)
 ```
 
 ```{r}
 #Lollipop chart, as an alternative to barplot
-ggdotchart(data_vis, x = "CNTRY_NAME", y = "total", color = "Continent", palette = witness.me, sorting = "descending", rotate = T, group = "Continent", add = "segments", ylab = expression("Consumption (l"/"y"~")"), xlab = "Country") + font("y.text", size = 4)
+ggdotchart(data_vis,
+           x = "CNTRY_NAME",
+           y = "total",
+           color = "Continent",
+           palette = witness.me,
+           sorting = "descending",
+           rotate = T,
+           group = "Continent",
+           add = "segments",
+           ylab = expression("Consumption (l"/"y"~")"),
+           xlab = "Country") +
+  font("y.text", size = 4)
 ```
 
 But really, the best way to learn is to just play around with the package and see what it's capable of.

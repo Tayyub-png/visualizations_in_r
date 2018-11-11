@@ -30,7 +30,8 @@ We will use data on per capita alcohol consumption in the countries of the world
 First thing is to make sure you have all the libraries uploaded for this session.
 
 ```{r message=FALSE, warning=FALSE}
-library(tidyverse)
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("plotly")) install.packages("plotly")
 library(plotly)
 library(leaflet)
 library(geojsonio)

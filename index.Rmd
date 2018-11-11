@@ -224,7 +224,7 @@ p3
 
 Finally, it's time to export our plot. There are several formats basic R can export to, the most useful of which are JPG, PNG and PDF. The code for them all follows the same basic format.
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 jpeg("myplot.jpg")
 p3
 dev.off()

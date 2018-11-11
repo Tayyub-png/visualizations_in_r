@@ -283,7 +283,7 @@ But really, the best way to learn is to just play around with the package and se
 
 ## EXCERCISE
 Now it's your turn to try!
-We want to know if landlocked countries are home to heavier drinkers - in all three different categories (beer, wine, spirits). So your task is to visualize differences between landlocked and non-landlocked countries in all three of these, in a single plot.
+We want to know if island nations are home to heavier drinkers - in all three different categories (beer, wine, spirits). So your task is to visualize differences between island and mainland countries in all three of these, in a single plot. HINT: don't forget patterns of consumption differ between continents!
 Use whichever visualization method you are most comfortable with, and you think will display the data best for the question we want to ask. Don't forget - visualization is as much design as it is coding! Try to make your figure clear and concise, but also visually appealing. Try to please your own sense of aesthetic first!
 
 # Interactive visualization

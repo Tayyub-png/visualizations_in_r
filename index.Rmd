@@ -184,6 +184,67 @@ p <- p + labs(x = expression("Area (km"^"2"~")"),
 p
 ```
 
+## Labels (ggrepel)
+
+One thing you can do is add labels to the data points in your plot. If, for instance, you want to know which country each observation in the scatterplot is. For this, you need to map a label aesthetic, and add a geom_text().
+We'll use a smaller subset of the data, limited only to Asia, to show how it's done.
+
+```{r}
+data_europe <- data_vis %>% subset(Continent == "Europe")
+p_lab <- ggplot(aes(x = SQKM_CNTRY,
+                y = total,
+                label = CNTRY_NAME),
+            data = data_europe) +
+  geom_point(colour = "grey50") +
+  scale_x_continuous(trans = log10_trans(),
+                            labels = trans_format("log10", math_format(10^.x))) +
+  labs(x = expression("Area (km"^"2"~")"),
+              y = expression("Consumption (l"/"y"~")")) +
+  ggtitle("Per capita alcohol consumption")
+p_lab + geom_text()
+```
+
+Obviously, this is a bit of a mess. Luckily, we can use the 'ggrepel' package to create text labels that are easily manipulated. We then use geom_text_repel() instead of the regular geom_text() - this will make sure the labels are not overlapping.
+
+```{r}
+p_lab + geom_text_repel()
+```
+
+Already this looks beter, but we can improve this even more! There's all sorts of customization we can do with 'ggrepel'. For instance, let's say we're only interested in labeling some of the countries, and not others. For instance, only landlocked countries.
+
+```{r}
+p_lab <- ggplot(aes(x = SQKM_CNTRY,
+                y = total,
+                label = CNTRY_NAME),
+            data = data_europe) +
+  geom_point(colour = ifelse(data_europe$LANDLOCKED == "Y", "red", "grey50")) + #this makes sure to colour only the selected observations
+  scale_x_continuous(trans = log10_trans(),
+                            labels = trans_format("log10", math_format(10^.x))) +
+  labs(x = expression("Area (km"^"2"~")"),
+              y = expression("Consumption (l"/"y"~")")) +
+  ggtitle("Per capita alcohol consumption")
+p_lab + geom_text_repel(data = subset(data_europe,
+                                      LANDLOCKED == "Y"), #this makes sure to only label the selected observations
+                        force = 1
+                        )
+```
+
+We can also move the labels. For instance, let's move them all to the top of the plot. We'll also need to rescale the y axis to leave enough space for the labels.
+
+```{r}
+p_lab + geom_text_repel(data = subset(data_europe,
+                                      LANDLOCKED == "Y"),
+                        nudge_y = 15 - subset(data_europe,
+                                      LANDLOCKED == "Y")$total,
+                        segment.colour = "grey50",
+                        direction = "x",
+                        force = 1
+                        ) +
+  scale_y_continuous(limits = c(NA, 15))
+
+```
+
+
 ## Facets, rotations, etc.
 
 Now we can deal with another problem - this plot is a bit cluttered. It's hard to tell the different continents from one another, which makes it difficult to identify trends. We can solve this via facetting - this is a cool tool that allows us to break up our one plot into several similar plots - they all have the same axes, but they are separated by the chosen factor (continents in this case).

@@ -46,7 +46,7 @@ if (!require("webshot")) install.packages("webshot")
 if (!require("htmlwidgets")) install.packages("htmlwidgets")
 if (!require("processx")) install.packages("processx")
 if (!require("viridis")) install.packages("viridis")
-if (!require("rgeos")) install.packages("rgeos")
+if (!require("ggrepel")) install.packages("ggrepel")
 ```
 
 A bit more preperation before we start: add all the fonts in your computer to R
@@ -736,14 +736,7 @@ To use the shapefile in `ggplot2` we have to first `fortify` the spatial attribu
 ```{r}
 #add an ID field to the metadata
 data_vis.sp@data$ID<- c(1:length(data_vis.sp@data$FIPS_CNTRY))
-#add the centroid to use later
-trueCentroids = gCentroid(data_vis.sp,byid=TRUE)
-#save the coordinates to tibble
-trueCentroids_d<- as_tibble(trueCentroids@coords)
-#add ID
-trueCentroids@coords$ID<- c(1:(length(trueCentroids@coords)/2))
-# join them to the data
-data_vis.sp@data<- left_join(data_vis.sp@data,trueCentroids_d,x="ID",y="ID")
+
 #save the metadata in a new object
 data_vis.sp_d<- data_vis.sp@data
 #fortify the data
@@ -777,7 +770,8 @@ p <- ggplot() +
          )
 p
 #change the color to have a nicer color scheme
-p+scale_fill_viridis(option = "magma", direction = -1)
+p<- p+scale_fill_viridis(option = "magma", direction = -1)
+p
 ```
 
 ### Change the ledgend position
@@ -807,7 +801,7 @@ q
 ### Plot a descrete variable
 
 ```{r}
-p <- ggplot() +
+pp <- ggplot() +
     # municipality polygons
     geom_polygon(data = map_data, aes(fill = Continent, 
                                       x = long, 
@@ -826,7 +820,7 @@ p <- ggplot() +
          title = "The continents of the world")
 brks_scale <- levels(map_data$Continent)
 labels_scale <- rev(brks_scale)
-q <- p +
+qq <- pp +
     # now we have to use a manual scale, 
     # because only ever one number should be shown per label
     scale_fill_manual(
@@ -852,7 +846,7 @@ q <- p +
           )
       )
 
-q
+qq
 ```
 
 A link to more things you can add to the plot 
@@ -860,9 +854,22 @@ https://timogrossenbacher.ch/2016/12/beautiful-thematic-maps-with-ggplot2-only/
 
 ### Add bubble plots
 ```{r}
-geom_point(data = cap_bubble, aes(cap_long, cap_lat, size = no_car_k), 
-             shape = 21, fill = "red", alpha = .5)                       +
-  scale_size_area(max_size=20)
+#create the data for the bubbles
+names(map_data)
+class(map_data)
+ggplot() +
+  geom_polygon(data = map_data, aes(x=long, 
+                                    y = lat, 
+                                    group = group), 
+               fill="grey", alpha=0.3)+
+   geom_path(data = map_data, aes(x = long, 
+                                   y = lat, 
+                                   group = group), 
+              color = "black", size = 0.1)+
+  geom_point(data=map_data, aes(x=x, y=y, size=total, color = total))+
+  scale_size_continuous(range=c(0.3,4)) +
+  scale_color_viridis(option = "inferno",direction = -1)+
+  theme_void()
 ```
 
 ### EXCERSISE

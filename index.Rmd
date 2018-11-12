@@ -7,8 +7,8 @@ output:
     toc_float: true
     smooth_scroll: true
     collapsed: false
+  runtime: shiny
     # number_sections: true
-    
 ---
 
 ```{r setup, include=FALSE}
@@ -45,6 +45,8 @@ if (!require("mapdata")) install.packages("mapdata")
 if (!require("webshot")) install.packages("webshot")
 if (!require("htmlwidgets")) install.packages("htmlwidgets")
 if (!require("processx")) install.packages("processx")
+if (!require("viridis")) install.packages("viridis")
+if (!require("rgeos")) install.packages("rgeos")
 ```
 
 A bit more preperation before we start: add all the fonts in your computer to R
@@ -316,6 +318,7 @@ The `plot_ly()` function uses the pipe symbol `%>%` to add traces which are equi
 plot_ly(data_vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter')
 ```
 
+#### Adding color
 Now lets add a descrete variable to use as color variable in the plot. We use whether it's and island or not
 ```{r message=FALSE, warning=FALSE}
 plot_ly(data_vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter',color =~ ISLAND)
@@ -327,6 +330,7 @@ We can change the colors to what we want
 plot_ly(data_vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter',color =~ISLAND,colors = "Set1")
 ```
 
+#### Legend position
 We can change the ledgend position
 
 ```{r message=FALSE, warning=FALSE}
@@ -359,7 +363,7 @@ plot_ly(data_vis,
   
 ```
 
-Change axis names
+#### Change axis names
 ```{r message=FALSE, warning=FALSE}
 plot_ly(data_vis,
         x=~log10(SQKM_CNTRY),
@@ -398,6 +402,7 @@ layout(legend = list(x = 0.1, y = 0.9),
        yaxis = y)
 ```
 
+#### Plot side by side
 We can plot side by side for each factor in the descrete variable. Make sure that the data you want to plot is in a long format.
 
 ```{r message=FALSE, warning=FALSE}
@@ -412,7 +417,8 @@ p <- data_vis %>%
 p
 ```
 
-We can put lines instead of dots by removing the "scatter" as type and adding the line `add_lines()`
+#### Line plot in subblot
+e can put lines instead of dots by removing the "scatter" as type and adding the line `add_lines()`
 
 ```{r message=FALSE, warning=FALSE}
 p <- data_vis %>%
@@ -470,6 +476,7 @@ p2 <- data_vis %>%
   add_bars()
 
 ```
+
 #### Proportion barplot
 
 ```{r message=FALSE, warning=FALSE}
@@ -485,8 +492,6 @@ cc2 %>%
 ```
 
 #### Boxplot 
-
-
 ```{r message=FALSE, warning=FALSE}
 #Standard boxplot
 p <- plot_ly(data_vis, y = ~total, color = I("darkgreen"), 
@@ -500,15 +505,15 @@ p<- plot_ly(data_vis, x = ~wine, y = ~interaction(ISLAND, Continent)) %>%
 p
 ```
 
-#### Exporting localy as html widget. This can be used in a website or presentation
-
+#### Exporting localy as html widget 
+This can be used in a website or presentation
 ```{r message=FALSE, warning=FALSE}
 htmlwidgets::saveWidget(p, "my_pot.html")
 ```
 
 #### Export static
 
-To export a high quality static plot you need to install an additional package for your OS names orca. Follow this github to unstall it:
+To export a high quality static plot from `plot_ly()` you need to install an additional package for your OS names orca. Follow this github to unstall it:
 https://github.com/plotly/orca#installation
 Then write 
 ```{r}
@@ -535,12 +540,18 @@ p<- data_vis %>%
 p
 ```
 
-You can add more variables to the plot by mapping them to other visual properties like `fill`, `stroke`, `size` and `shape`.
+#### Adding variables to plot
+You can add more variables to the plot by mapping them to other visual properties:
+`fill` = color
+`stroke`=color pelet
+`size` = size of the symbols
+`shape`= shale of the symbols
 ```{r}
 data_vis %>% 
   ggvis(x =~log10(POP_CNTRY),
         y =~spirits,fill=~Continent,size =~wine,shape =~ISLAND) %>% 
   layer_points()
+
 ```
 
 To use a fix color or size instead of a variable, use `:=`
@@ -560,7 +571,6 @@ ggvis(x = ~wine, y = ~beer) %>%
 ```
 
 #### Fix legend
-
 ```{r}
 data_vis %>% 
 ggvis(x = ~wine, y = ~beer) %>% 
@@ -571,7 +581,6 @@ ggvis(x = ~wine, y = ~beer) %>%
 ```
 
 #### Histogram
-
 ```{r}
 data_vis %>% 
   ggvis(~spirits,fill:="darkgreen") %>% 
@@ -580,7 +589,6 @@ data_vis %>%
 
 
 #### Barplot
-
 ```{r}
 data_vis %>% 
   ggvis(~log10(POP_CNTRY), ~wine) %>%
@@ -588,7 +596,6 @@ data_vis %>%
 ```
 
 #### Line plot
-
 ```{r}
 data_vis %>% 
   ggvis(~log10(POP_CNTRY), ~log10(SQKM_CNTRY)) %>%
@@ -596,7 +603,6 @@ data_vis %>%
 ```
 
 #### Boxplot
-
 ```{r}
 data_vis %>% 
   ggvis(x=~Continent, y=~wine,fill:="darkblue") %>% 
@@ -604,7 +610,9 @@ data_vis %>%
 ```
 
 #### Make the plot interactive
-`ggvis` gives an option of interactive plotting. It is  different interactive plotting than we saw in plotly but maybe useful for other things. 
+`ggvis` gives an option of interactive plotting. It is different than the interactive plotting in `plotly` but maybe useful for other things. 
+
+##### Change symbol size
 For example we can allows the user to change the size of the points and the transperacy using a slider
 ```{r}
 #add sliders to the size and the opacity
@@ -618,7 +626,7 @@ data_vis %>%
   layer_points()
 ```
 
-Input a check box
+##### Input a check box
 ```{r message=FALSE, warning=FALSE}
 
 model_type <- input_checkbox(label = "Use flexible curve",
@@ -627,25 +635,169 @@ ggvis(data = data_vis,x=~total, y=~spirits) %>%
   layer_model_predictions(model = model_type)
 ```
 
-Add an input select bar
-
-
-
-
+##### To summarize
+`ggvis` is a good tool to create plots in R and is in some ways similar to `ggplot2`
+__Pros__: Uses less lines than `ggplot` to create the same plot
+__Cons__: Has less documentation and forums which makes it a bit harder to learn 
 
 Here is a good comperison review of `ggplot2` vs. `ggvis` and the difference between them 
 https://stats.stackexchange.com/questions/117078/for-plotting-with-r-should-i-learn-ggplot2-or-ggvis/117080
 
 Here is  a good comparison between the different available packages for plotting in R
 http://ouzor.github.io/blog/2014/11/21/interactive-visualizations.html
+
 ## Introduction to 3D
 
 
 # Geographic plotting
 
-We can plot two types of geographical plots in R - stationary and interactive. The first one is done with ggplot the second is mainly done with leaflet but note that there are some more packages out there. We'll start with ggplot
+We can plot two types of geographical plots in R - static (`ggplot2`) and interactive (`leaflet`). There are some more packages out there you can find some links in the end of this section.
 
 ## ggplot2
+
+### Manipulating the data
+To plot geographical data with `ggplot` you first need to change the structure of the data. We will use the shapefile `data_vis.sp` that we created befor.
+
+To use the shapefile in `ggplot2` we have to first `fortify` the spatial attribute of our data and then join the metadata back to the new spatial data
+
+```{r}
+#add an ID field to the metadata
+data_vis.sp@data$ID<- c(1:length(data_vis.sp@data$FIPS_CNTRY))
+#add the centroid to use later
+trueCentroids = gCentroid(data_vis.sp,byid=TRUE)
+#save the coordinates to tibble
+trueCentroids_d<- as_tibble(trueCentroids@coords)
+#add ID
+trueCentroids@coords$ID<- c(1:(length(trueCentroids@coords)/2))
+# join them to the data
+data_vis.sp@data<- left_join(data_vis.sp@data,trueCentroids_d,x="ID",y="ID")
+#save the metadata in a new object
+data_vis.sp_d<- data_vis.sp@data
+#fortify the data
+data_vis.sp_f <- fortify(data_vis.sp, region = "ID") %>% 
+  mutate(id = as.numeric(id))
+# now we join the thematic data
+map_data <- data_vis.sp_f %>% left_join(data_vis.sp_d, by = c("id" = "ID"))
+```
+
+### Basic map
+
+```{r}
+p <- ggplot() +
+    # municipality polygons
+    geom_polygon(data = map_data, aes(fill = beer, 
+                                      x = long, 
+                                      y = lat, 
+                                      group = group)) +
+    # municipality outline
+    geom_path(data = map_data, aes(x = long, 
+                                   y = lat, 
+                                   group = group), 
+              color = "white", size = 0.1) +
+    coord_equal() +
+    # add the previously defined basic theme
+    theme_map() +
+    labs(x = NULL, 
+         y = NULL, 
+         title = "Beer consumption around the world", 
+         subtitle = "Litters consumed per capita"
+         )
+p
+#change the color to have a nicer color scheme
+p+scale_fill_viridis(option = "magma", direction = -1)
+```
+
+### Change the ledgend position
+
+```{r}
+q <- p +
+  # this is the main part
+  theme(legend.position = "bottom") +
+  scale_fill_viridis(
+    option = "magma", 
+    direction = -1,
+    name = "Litters per country",
+    # here we use guide_colourbar because it is still a continuous scale
+    guide = guide_colorbar(
+      direction = "horizontal",
+      barheight = unit(2, units = "mm"),
+      barwidth = unit(50, units = "mm"),
+      draw.ulim = F,
+      title.position = 'top',
+      # some shifting around
+      title.hjust = 0.5,
+      label.hjust = 0.5
+  ))
+q
+```
+
+### Plot a descrete variable
+
+```{r}
+p <- ggplot() +
+    # municipality polygons
+    geom_polygon(data = map_data, aes(fill = Continent, 
+                                      x = long, 
+                                      y = lat, 
+                                      group = group)) +
+    # municipality outline
+    geom_path(data = map_data, aes(x = long, 
+                                   y = lat, 
+                                   group = group), 
+              color = "white", size = 0.1) +
+    coord_equal() +
+    theme_map() +
+    theme(legend.position = "bottom") +
+    labs(x = NULL, 
+         y = NULL, 
+         title = "The continents of the world")
+brks_scale <- levels(map_data$Continent)
+labels_scale <- rev(brks_scale)
+q <- p +
+    # now we have to use a manual scale, 
+    # because only ever one number should be shown per label
+    scale_fill_manual(
+          # in manual scales, one has to define colors, well, manually
+          # I can directly access them using viridis' magma-function
+          values = rev(magma(6)),
+          breaks = rev(brks_scale),
+          name = "Continents",
+          drop = FALSE,
+          labels = labels_scale,
+          guide = guide_legend(
+            direction = "horizontal",
+            title.position = 'top',
+            # I shift the labels around, the should be placed 
+            # exactly at the right end of each legend key
+            title.hjust = 0.5,
+            label.hjust = 1,
+            nrow = 1,
+            byrow = T,
+            # also the guide needs to be reversed
+            reverse = T,
+            label.position = "bottom"
+          )
+      )
+
+q
+```
+
+A link to more things you can add to the plot 
+https://timogrossenbacher.ch/2016/12/beautiful-thematic-maps-with-ggplot2-only/
+
+### Add bubble plots
+```{r}
+geom_point(data = cap_bubble, aes(cap_long, cap_lat, size = no_car_k), 
+             shape = 21, fill = "red", alpha = .5)                       +
+  scale_size_area(max_size=20)
+```
+
+### EXCERSISE
+
+Plot each one of the alcohol consumption types data on a map and put them next to eachother in a grid plot of 2X2
+
+
+
 
 For this we need a few packages that we uploaded before: `maps`, `mapdata`, and `ggplot2`
 * The `maps` package contains a lot of outlines of continents, countries, states, and counties that have been with R for a long time.

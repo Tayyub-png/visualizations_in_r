@@ -8,8 +8,7 @@ output:
     collapsed: true
     smooth_scroll: true
     toc_depth: 3
-    
-  #runtime: shiny_prerendered
+    runtime: shiny_prerendered
     # number_sections: true
 ---
 
@@ -55,7 +54,7 @@ if (!require("htmltools")) install.packages("htmltools")
 
 A bit more preperation before we start: add all the fonts in your computer to R
 ```{r message=FALSE, warning=FALSE}
-# font_import(prompt = F) #this imports fonts from your computer into R, and may take a lot of time
+font_import(prompt = F) #this imports fonts from your computer into R, and may take a lot of time
 #load the fonts
 loadfonts(quiet = T) #you may need to change the device, depending on whether you want to print the plot in R or export it
 ```
@@ -113,7 +112,7 @@ This basic scatterplot is kind of ugly and uninformative. The good news is this 
 
 ## Colour schemes
 
-Our first step will be colour schemes. The easiest thing to do is to use the package 'RColorBrewer'to generate a custom palette from a few nice looking options. With the function brewer.pal() you define how many colours you want (6 in our case, for 6 continents), and which  palette you want (in this case we use a palette called "Set3" - see the documentation of brewer.pal() for all available palettes).
+Our first step will be colour schemes. The easiest thing to do is to use the package `RColorBrewer` to generate a custom palette from a few nice looking options. With the function `brewer.pal()` you define how many colours you want (6 in our case, for 6 continents), and which  palette you want (in this case we use a palette called "Set3" - see the documentation of brewer.pal() for all available palettes).
 
 ```{r}
 my.palette <- brewer.pal(6, "Set3")
@@ -137,8 +136,8 @@ And don't forget - when you're preparing plots for publications, some of your au
 
 ## Theme layers
 
-Theme layers are where you do most of your ggplot customization. theme() has a LOT of different arguments that let you change the way your plot looks. You can change the background, the axes, the gridlines, the fonts, the titles, and the legend.
-Modifying elements in the theme is simple, but notice that different elements inherit different functions. For instance, modifying text elements is done using element_text(), whereas modifying line elements is done using element_line(). The one exception is element_blank() - use this for (almost) any type of element that you want to remove from the plot completely.
+Theme layers are where you do most of your ggplot customization. `theme()` has a LOT of different arguments that let you change the way your plot looks. You can change the background, the axes, the gridlines, the fonts, the titles, and the legend.
+Modifying elements in the theme is simple, but notice that different elements inherit different functions. For instance, modifying text elements is done using `element_text()`, whereas modifying line elements is done using `element_line()`. The one exception is `element_blank()` - use this for (almost) any type of element that you want to remove from the plot completely.
 Here are a few useful examples:
 
 ```{r message=FALSE, warning=FALSE}
@@ -165,7 +164,7 @@ p + theme(legend.title = element_blank()) #remove the title of the legend
 
 ### Axes manipulation
 
-First of all, it's about time we do something about our ugly data. One of our main issues is that the country areas (on the X axis) should be log-transformed. We can transform our data using a simple line of code, and some functions from the 'scales' package. Here are some examples, but make sure to check the trans() function documentation and pick the type of transformation that fits your data!
+First of all, it's about time we do something about our ugly data. One of our main issues is that the country areas (on the X axis) should be log-transformed. We can transform our data using a simple line of code, and some functions from the `scales` package. Here are some examples, but make sure to check the `trans()` function documentation and pick the type of transformation that fits your data!
 
 ```{r message=FALSE, warning=FALSE}
 p + scale_x_continuous(trans = log10_trans()) #log10 transformation
@@ -173,7 +172,7 @@ p + scale_x_continuous(trans = sqrt_trans()) #square-root transformation
 p + scale_x_continuous(trans = reverse_trans()) #reverse transformation
 ```
 
-And to make this look a  bit better, let's change the tick labels to have actual numbers. We'll do this with the trans_format() function. We tell the function which transformation to apply to the numbers, and the format in which to write the labels.
+And to make this look a  bit better, let's change the tick labels to have actual numbers. We'll do this with the `trans_format()` function. We tell the function which transformation to apply to the numbers, and the format in which to write the labels.
 
 ```{r}
 p <- p + scale_x_continuous(trans = log10_trans(),
@@ -183,7 +182,7 @@ p
 
 
 You may also want to change the titles of your axes - this is always useful because usually your data will have column names that are short and easy to type, but less informative for a plot you want to publish.
-The expression() function (from base R) is useful for this, because it allows you to add special characters, as well as create super- and subscripts, italics, etc.
+The `expression()` function (from base R) is useful for this, because it allows you to add special characters, as well as create super- and subscripts, italics, etc.
 
 ```{r}
 p <- p + labs(x = expression("Area (km"^"2"~")"),
@@ -191,9 +190,9 @@ p <- p + labs(x = expression("Area (km"^"2"~")"),
 p
 ```
 
-## Labels (ggrepel)
+## Labels `ggrepel`
 
-One thing you can do is add labels to the data points in your plot. If, for instance, you want to know which country each observation in the scatterplot is. For this, you need to map a label aesthetic, and add a geom_text().
+One thing you can do is add labels to the data points in your plot. If, for instance, you want to know which country each observation in the scatterplot is. For this, you need to map a label aesthetic, and add a `geom_text()`.
 We'll use a smaller subset of the data, limited only to Asia, to show how it's done.
 
 ```{r}
@@ -211,13 +210,13 @@ p_lab <- ggplot(aes(x = SQKM_CNTRY,
 p_lab + geom_text()
 ```
 
-Obviously, this is a bit of a mess. Luckily, we can use the 'ggrepel' package to create text labels that are easily manipulated. We then use geom_text_repel() instead of the regular geom_text() - this will make sure the labels are not overlapping.
+Obviously, this is a bit of a mess. Luckily, we can use the `ggrepel` package to create text labels that are easily manipulated. We then use `geom_text_repel()` instead of the regular `geom_text()` - this will make sure the labels are not overlapping.
 
 ```{r}
 p_lab + geom_text_repel()
 ```
 
-Already this looks beter, but we can improve this even more! There's all sorts of customization we can do with 'ggrepel'. For instance, let's say we're only interested in labeling some of the countries, and not others. For instance, only landlocked countries.
+Already this looks beter, but we can improve this even more! There's all sorts of customization we can do with `ggrepel`. For instance, let's say we're only interested in labeling some of the countries, and not others. For instance, only landlocked countries.
 
 ```{r}
 p_lab <- ggplot(aes(x = SQKM_CNTRY,
@@ -300,7 +299,7 @@ First thing we'll do is rotate our violin plot. This is very easily done:
 p2 + coord_flip()
 ```
 
-Now, we'll use the plot_grid() function from the package 'cowplot' to draw the two plots side by side.
+Now, we'll use the `plot_grid()` function from the package `cowplot` to draw the two plots side by side.
 
 ```{r}
 p <- p + facet_grid(Continent ~ .) +
@@ -348,11 +347,11 @@ p3
 dev.off()
 ```
 
-Tip: pdf() is super useful! The function has arguments to e.g. change the font family, combine different plots to a single file, choose the target paper size, etc. It's highly recommended to check the function documentation!
+Tip: `pdf()` is super useful! The function has arguments to e.g. change the font family, combine different plots to a single file, choose the target paper size, etc. It's highly recommended to check the function documentation!
 
-##ggpubr
+## ggpubr
 
-After we learned all this the hard way, let's learn the easy way. The 'ggpubr' package is the simple way to create nice looking plots. 'ggpubr' basically compressed all of the different ggplot functions (geoms, themes, scales, etc.) into a single function - there's a different function for different geoms (e.g. ggboxplot() or gghistogram()), and all of the different theme options etc. are written as arguments in the function.
+After we learned all this the hard way, let's learn the easy way. The `ggpubr` package is the simple way to create nice looking plots. `ggpubr` basically compressed all of the different ggplot functions (geoms, themes, scales, etc.) into a single function - there's a different function for different geoms (e.g. `ggboxplot()` or `gghistogram()`), and all of the different theme options etc. are written as arguments in the function.
 For instance, we can recreate our violin plot using just one line of code.
 
 ```{r}
@@ -367,7 +366,7 @@ ggviolin(data_vis,
          add.params = list(alpha = .2))
 ```
 
-'ggpubr' has similar types of functions for different types of plots (scatterplots, boxplots, etc.). All look lovely, and require a lot less hassle to generate. It's a package well worth exploring. Here a few examples of the types of plots you can generate with 'ggpubr':
+`ggpubr` has similar types of functions for different types of plots (scatterplots, boxplots, etc.). All look lovely, and require a lot less hassle to generate. It's a package well worth exploring. Here a few examples of the types of plots you can generate with `ggpubr`:
 
 ```{r}
 #density plots
@@ -431,29 +430,29 @@ Use whichever visualization method you are most comfortable with, and you think 
 
 # Interactive visualization
 
-In this part we will learn how to create interactive plots and how to use them online, in presentations, or Rmd files for reporting our results.
+In this part we will learn how to create interactive plots and how to use them online, in presentations, or in Rmd files for reporting our results.
 
-## `plotly`
+## plotly
 
 ### Introduction
-Plotly is a grate cross platform package, originating in JavaScript (JS) form, that allows a lot of variation for plotting interactive plots. We will use the R version of the package. 
-It can be used in two ways, the simplest use of the package, is to use `ggplotly()` which transformes `ggplot` object to an interactive visualizations. This is done with the code 
+`plotly` is a great cross-platform package, originating in JavaScript (JS) form, that allows a lot of options for plotting interactive plots. We will use the R version of the package. 
+It can be used in two ways. The simplest usage of the package is to use `ggplotly()`, which transforms `ggplot` objects to interactive visualizations. This is done with the code 
 
 ```{r}
 #create a ggplot object
 p <- ggplot(aes(x = SQKM_CNTRY, y = total, colour = Continent), data = data_vis) + geom_point() + ggtitle("Per capita alcohol consumption") + scale_colour_manual(values = witness.me) + scale_x_continuous(trans = log10_trans())
 p
-#transform in to an interactive object
+#transform into an interactive object
 ggplotly(p)
 ```
 
-The other option is to transfer data into and interactive object, this is done with the `plot_ly()` function. This function was originally created to allow create plots that were not available with `ggplot` such as 3D and mash plots. However, today you can create any plot with this function, and majority of `ggplot` objects can be transformed into a `plotly` object. 
+The second option is to transfer data into an interactive object. This is done with the `plot_ly()` function. This function was originally designed to create plots that were not available with `ggplot` such as 3D and mash plots. However, today you can create any plot with this function, and the majority of `ggplot` objects can be transformed into a `plotly` object. 
 
-We will anyway learn a bit about the `plot_ly()` syntex for you to be able to use the power of the JS library in R
+We will learn a bit about the `plot_ly()` syntax for you to be able to use the power of the JS library in R.
 
-### `plot_ly()` syntex
-This function is extremely versitile and it allows you to control and change every small thing on the plot.
-The `plot_ly()` function uses the pipe symbol `%>%` to add traces which are equivalent to `geom` in `ggplot` and describes the type of plot you want, and layers which are anything you want to change or add to the the type of plot. Scatter is the default type. Lets look at the most basic `plot_ly()` plot: Number of beer liters consumed as a function of country size
+### `plot_ly()` syntax
+This function is extremely versatile and it allows you to control and change every small thing on the plot.
+The `plot_ly()` function uses the pipe symbol `%>%` to add traces, which are equivalent to `geom` in `ggplot` and describe the type of plot you want, and layers which are anything you want to change or add to the the type of plot. Scatter is the default type. Let's look at the most basic `plot_ly()` plot: Litres of beer consumed as a function of country area
 
 ```{r message=FALSE, warning=FALSE}
 
@@ -461,19 +460,21 @@ plot_ly(data_vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter')
 ```
 
 ### Adding color
-Now lets add a descrete variable to use as color variable in the plot. We use whether it's and island or not
+Now lets add a discrete variable to use as color variable in the plot. We'll use island (yes or no) as a factor
+
 ```{r message=FALSE, warning=FALSE}
 plot_ly(data_vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter',color =~ ISLAND)
 
 ```
 
 We can change the colors to what we want
+
 ```{r message=FALSE, warning=FALSE}
 plot_ly(data_vis,x=~log10(SQKM_CNTRY),y=~beer, type = 'scatter',color =~ISLAND,colors = "Set1")
 ```
 
 ### Legend position
-We can change the ledgend position
+We can change the legend position
 
 ```{r message=FALSE, warning=FALSE}
 #legende bottom
@@ -545,7 +546,7 @@ layout(legend = list(x = 0.1, y = 0.9),
 ```
 
 ### Plot side by side
-We can plot side by side for each factor in the descrete variable. Make sure that the data you want to plot is in a long format.
+We can plot side by side each level in the discrete variable. Make sure that the data you want to plot are in a long format.
 
 ```{r message=FALSE, warning=FALSE}
 p <- data_vis %>%
@@ -559,8 +560,8 @@ p <- data_vis %>%
 p
 ```
 
-#### Line plot in subblot
-e can put lines instead of dots by removing the "scatter" as type and adding the line `add_lines()`
+#### Line plot in subplot
+We can plot lines connecting all the observations instead of dots by removing the "scatter" as type and adding the line `add_lines()`
 
 ```{r message=FALSE, warning=FALSE}
 p <- data_vis %>%
@@ -647,7 +648,7 @@ p<- plot_ly(data_vis, x = ~wine, y = ~interaction(ISLAND, Continent)) %>%
 p
 ```
 
-### Exporting localy as html widget 
+### Exporting locally as html widget 
 This can be used in a website or presentation
 ```{r message=FALSE, warning=FALSE}
 htmlwidgets::saveWidget(p, "my_plot.html")
@@ -663,15 +664,15 @@ Then write
 ```
 
 ### To summarize `plotly`
-__Pros__: A strong tool for interactive ploting especially if you want to use Shiny. Also has the ggplotly option taht converts all ggplots to interactive ones.
-__Cons__: Syntex is not intuetive and needs some time to get used to if you don't know JS
+__Pros__: A strong tool for interactive ploting especially if you want to use `Shiny`. Also has the `ggplotly` option that converts all ggplots to interactive ones.
+__Cons__: Syntax is not intuitive and needs some time to get used to if you don't know JS
 
 
-## `ggvis`
+## ggvis
 `ggvis` is a good alternative to `plotly` and to `ggplot` because the structure of the object is similar to `ggplot2` but with ` %>% ` instead of `+`. To use the package we will use `ggvis()`. 
-I will show here a few examples of how to use ggvis and in the end you can find a list of links that can be useful to deepen your understanding in the package.
+We will show here a few examples of how to use `ggvis` and in the end you can find a list of links that can be useful to deepen your understanding of the package.
 
-The basic  `ggvis()` plots are static just as ggplot, but perhaps need less writing to produce.
+The basic  `ggvis()` plots are static just like `ggplot`, but perhaps need less writing to produce.
 
 ### Scatterplot
 We'll start with a scatterplot
@@ -685,9 +686,9 @@ p
 ### Adding variables to plot
 You can add more variables to the plot by mapping them to other visual properties:
 `fill` = color
-`stroke`=color pelet
+`stroke`= color palette
 `size` = size of the symbols
-`shape`= shale of the symbols
+`shape`= shape of the symbols
 ```{r}
 data_vis %>% 
   ggvis(x =~log10(POP_CNTRY),
@@ -696,7 +697,7 @@ data_vis %>%
 
 ```
 
-To use a fix color or size instead of a variable, use `:=`
+To use a fixed color or size instead of a variable, use `:=`
 ```{r}
 data_vis %>% 
   ggvis(x =~log10(POP_CNTRY),y =~spirits,fill:="red",size :=30,shape :="square") %>% 
@@ -752,10 +753,10 @@ data_vis %>%
 ```
 
 ### Make the plot interactive
-`ggvis` gives an option of interactive plotting. It is different than the interactive plotting in `plotly` but maybe useful for other things. 
+`ggvis` gives an option of interactive plotting. It is different from the interactive plotting in `plotly` but maybe useful for other things. 
 
 ##### Change symbol size
-For example we can allows the user to change the size of the points and the transperacy using a slider
+For example we can allow the user to change the size of the points and the transperacy using a slider
 ```{r}
 #add sliders to the size and the opacity
 data_vis %>% 
@@ -777,12 +778,12 @@ ggvis(data = data_vis,x=~total, y=~spirits) %>%
   layer_model_predictions(model = model_type)
 ```
 
-### To summarize
+### Summary
 `ggvis` is a good tool to create plots in R and is in some ways similar to `ggplot2`
 __Pros__: Uses less lines than `ggplot` to create the same plot
 __Cons__: Has less documentation and forums which makes it a bit harder to learn 
 
-Here is a good comperison review of `ggplot2` vs. `ggvis` and the difference between them 
+Here is a good comparison review of `ggplot2` vs. `ggvis` and the difference between them 
 https://stats.stackexchange.com/questions/117078/for-plotting-with-r-should-i-learn-ggplot2-or-ggvis/117080
 
 Here is  a good comparison between the different available packages for plotting in R
@@ -791,12 +792,12 @@ http://ouzor.github.io/blog/2014/11/21/interactive-visualizations.html
 
 # Geographic plotting
 
-We can plot two types of geographical plots in R - static (`ggplot2`) and interactive (`leaflet`). There are some more packages out there you can find some links in the end of this section.
+We can plot two types of geographical plots in R - static (`ggplot2`) and interactive (`leaflet`). There are some more packages out there - you can find some links in the end of this section.
 
-## `ggplot2`
+## ggplot2
 
 ### Manipulating the data
-To plot geographical data with `ggplot` you first need to change the structure of the data. We will use the shapefile `data_vis.sp` that we created befor.
+To plot geographical data with `ggplot` you first need to change the structure of the data. We will use the shapefile `data_vis.sp` that we created previously.
 
 To use the shapefile in `ggplot2` we have to first `fortify` the spatial attribute of our data and then join the metadata back to the new spatial data
 
@@ -830,7 +831,7 @@ p <- ggplot() +
     labs(x = NULL, 
          y = NULL, 
          title = "Beer consumption around the world", 
-         subtitle = "Litters consumed per capita"
+         subtitle = "Litres consumed per capita"
          )
 p
 #change the color to have a nicer color scheme
@@ -838,7 +839,7 @@ p+scale_fill_viridis(option = "magma", direction = -1)
 
 ```
 
-### Change the ledgend position
+### Change the legend position
 
 ```{r}
 q <- p +
@@ -847,7 +848,7 @@ q <- p +
   scale_fill_viridis(
     option = "magma", 
     direction = -1,
-    name = "Litters per country",
+    name = "Litres per country",
     # here we use guide_colourbar because it is still a continuous scale
     guide = guide_colorbar(
       direction = "horizontal",
@@ -898,7 +899,7 @@ qq <- pp +
           guide = guide_legend(
             direction = "horizontal",
             title.position = 'top',
-            # I shift the labels around, the should be placed 
+            # I shift the labels around, they should be placed 
             # exactly at the right end of each legend key
             title.hjust = 0.5,
             label.hjust = 1,
@@ -934,18 +935,18 @@ ggplot() +
   theme_void()
 ```
 
-### EXCERSISE
+### EXCERCISE
 
-Plot each one of the alcohol consumption types data on a map and put them next to eachother in a grid plot of 2X2
+Plot each one of the alcohol consumption types data (beer, wine, spirits) on a map and put them next to eachother in a grid plot of 2X2.
 
-## `leaflet`
+## leaflet
 
 `leaflet` is another JavaScript based package that creates intereactive geographical plots.
 It uses ` %>% ` to connect between the layers of the plot.
 
 
 ### Basic example
-Lets put a random point on a defult map
+Lets put a random point on a default map
 
 ```{r}
 m <- leaflet() %>%
@@ -956,8 +957,8 @@ m
 
 ### Backgrounds
 
-We can change the base map we are using to either ome from the internet or a shapefile we have.
-We will do this using `addProviderTiles()` that host many free third-party maps.
+We can change the basemap we are using to either one from the internet or a shapefile we have.
+We will do this using `addProviderTiles()` that hosts many free third-party maps.
 
 For example a black and white version
 ```{r}
@@ -973,16 +974,16 @@ m %>% addProviderTiles(providers$CartoDB.Positron)
 ### Popups
 
 ```{r}
-# create a string with the adress and the link to the location
+# create a string with the adrdess and the link to the location
 content <- paste(sep = "<br/>",
   "<b><a href='https://smnh.tau.ac.il/'>The Steinhardt Museum of Natural History</a></b>",
   "Klausner St 12",
   "Tel Aviv-Yafo, IL"
 )
 
-# plot a defult map
+# plot a default map
 leaflet() %>% addTiles() %>%
-  #add popup gps coordinates, contatnt variable allows the popup to appear
+  #add popup GPS coordinates, content variable allows the popup to appear
   addPopups(34.807371, 32.115358, content)
 ```
 
@@ -990,7 +991,7 @@ You can use this website to find GPS coordinates for the address you are interes
 https://www.gps-coordinates.net/
 
 
-Lets put popups on the center of all our countries with their names
+Let's put popups in the center of all our countries with their names
 
 ```{r}
 #create the data that we will pass to the popup layer.
@@ -1002,7 +1003,7 @@ leaflet(df) %>% addTiles() %>%
 
 ### Labels and Markers
 
-Labels will make the information in the popup markers appear when you hoover over them
+Labels will make the information in the popup markers appear when you hover over them
 
 ```{r}
 leaflet(df) %>% addTiles() %>%
@@ -1019,7 +1020,7 @@ leaflet(data_vis.sp) %>% addTiles() %>% addMarkers(~x,~y,
 
 #### Customize label appearence
 
-Lets use only three countries so that it will be a bit more useful. In this case we'll make the lables to be constant using `noHide = T` in the `labelOptions`
+Let's use only three countries so that it will be a bit more useful. In this case we'll make the lables constant using `noHide = T` in the `labelOptions`
 
 ```{r}
 #create the data
@@ -1027,7 +1028,7 @@ df2<- filter(data_vis.sp@data, CNTRY_NAME %in% c("United States","Russia","Papua
 #control the looks of each label
 leaflet(df2) %>% addTiles() %>%
   addMarkers(~x[1], ~y[1], label = ~htmlEscape(CNTRY_NAME[1]),
-             #this is a use of CSS programing language to change the parameters of the label
+             #this is a use of CSS programming language to change the parameters of the label
              labelOptions = labelOptions(noHide = T,
                                          direction = "bottom",
                                          style = list(
@@ -1084,7 +1085,7 @@ leaflet(df2) %>% addTiles() %>%
 
 ### Polygons and Lines
 
-Lets plot color only few countries from our polygon
+Let's color only few countries from our polygon
 
 ```{r}
 #subset the data. Use the first 10 countries
@@ -1095,10 +1096,10 @@ leaflet(data_vis.sp_sub) %>%
   #add a base background
   addTiles() %>%
   #add the polygon with colors based on the size cut-off.
-  # The first color is passed to the borders of the polygons
+  #The first color is passed to the borders of the polygons
   addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
     opacity = 1.0, fillOpacity = 0.5,
-    #fill color says based on what to color and the (SQKM_CNTRY) makes sure that it is indeed colord
+    #fill color determines what to color based on a condition (SQKM_CNTRY) and makes sure that it is indeed colored
     fillColor = ~colorQuantile("YlOrRd", SQKM_CNTRY)(SQKM_CNTRY),
     #highlight is met to define the border
     highlightOptions = highlightOptions(color = "white", weight = 2,
@@ -1111,7 +1112,7 @@ leaflet(data_vis.sp_sub) %>%
 Lets add circles with changing size based on the total alcohol consumption
 
 ```{r}
-# We'll use the data from the sapefile we created before
+# We'll use the data from the shapefile we created previously
 df3<- data_vis.sp_sub@data
 
 leaflet(df3) %>%
@@ -1122,11 +1123,11 @@ leaflet(df3) %>%
 
 ### Choropleths maps
 
-Choropleths refers to maps in which the polygons are colored based on a continious or a discrete variable. This is similar to what we did with `ggplot2`
+Choropleths refers to maps in which the polygons are colored based on a continuous or a discrete variable. This is similar to what we did with `ggplot2`
 
 Lets start with a basic one, color the countries based on spirit consumption
 ```{r}
-# create the color palet with viridis let it decide the bins by itself
+# create the color palette with viridis, let it decide the bins by itself
 pal <- leaflet::colorBin(viridis_pal(option = "A",direction = -1)(5), domain = data_vis.sp$wine)
 # this comment pal object is using colorBrewer in case you want a different method to create your colors
 # pal <- colorBin("RdYlBu", domain = data_vis.sp@data$spirits)
@@ -1145,7 +1146,7 @@ m %>% addPolygons(
 
 #### Highlight the country
 
-Lets add an option of looking which country we are standing with the mouse
+Lets add an option of highlighting the country our mouse pointer is currently over
 
 ```{r}
 m<- m %>% addPolygons(

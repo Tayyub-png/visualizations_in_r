@@ -1,6 +1,6 @@
 ---
 title: "Visualizations in R"
-author: "Alex Slavenko and Maria Novosolov"
+author: "Maria Novosolov"
 output:  
   html_document:  
     toc: true  
@@ -31,7 +31,7 @@ We will use data on per capita alcohol consumption in the countries of the world
 
 First thing is to make sure you have all the libraries uploaded for this session.
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE}
 if (!require("tidyverse")) install.packages("tidyverse")
 if (!require("plotly")) install.packages("plotly")
 if (!require("leaflet")) install.packages("leaflet")
@@ -119,11 +119,14 @@ my.palette <- brewer.pal(6, "Set3")
 p + scale_color_manual(values = my.palette)
 ```
 
-We can also generate custom colour palettes using online tools. There are many different online tools to generate colour palettes, and in this tutorial we will try one nifty one, found on this website: https://palettegenerator.com/ - this allows you to generate custom colour palettes from pictures you upload.
+We can also generate custom colour palettes using online tools. There are many different online tools to generate colour palettes, and in this tutorial we will try a nifty one, found on this website: https://palettegenerator.com/ - this allows you to generate custom colour palettes from pictures you upload.
 Or you can use ready palets in the brew from this website
 https://moderndata.plot.ly/create-colorful-graphs-in-r-with-rcolorbrewer-and-plotly/
 
-So we'll use this one to make an epic Mad Max colour palette!
+Or another good source for generating palettes:
+https://coolors.co/
+
+So we'll use a picture to make an epic Mad Max colour palette!
 
 ```{r message=FALSE, warning=FALSE}
 witness.me <- c("#DE8136", "#19191B", "#F6CAB1", "#533927", "#986039", "#166268")
@@ -136,7 +139,7 @@ And don't forget - when you're preparing plots for publications, some of your au
 
 ## Theme layers
 
-Theme layers are where you do most of your ggplot customization. `theme()` has a LOT of different arguments that let you change the way your plot looks. You can change the background, the axes, the gridlines, the fonts, the titles, and the legend.
+Theme layers are where you do most of your ggplot customization. `theme()` has a **LOT** of different arguments that let you change the way your plot looks. You can change the background, the axes, the gridlines, the fonts, the titles, and the legend.
 Modifying elements in the theme is simple, but notice that different elements inherit different functions. For instance, modifying text elements is done using `element_text()`, whereas modifying line elements is done using `element_line()`. The one exception is `element_blank()` - use this for (almost) any type of element that you want to remove from the plot completely.
 Here are a few useful examples:
 
@@ -267,7 +270,7 @@ Your plot doesn't have to be facetted by a factor that you've mapped. For instan
 p + facet_grid(. ~ ISLAND)
 ```
 
-We've now managed to generate a pretty nice looking plot. You'll see that we all facets have the same range of values in their axes - this allows us to compare the scatterplots in the different levels of our factor (continent), but because they are each in a different "plot", it's a lot less messy and we can see where there is no trend (Europe) and where they might be something going on (Asia).
+We've now managed to generate a pretty nice looking plot. You'll see that all facets have the same range of values in their axes - this allows us to compare the scatterplots in the different levels of our factor (continent), but because they are each in a different "plot", it's a lot less messy and we can see where there is no trend (Europe) and where they might be something going on (Asia).
 
 Remember: facets can be very useful, but sometimes they can be detrimental. For instance, if you want to show that your trends DO NOT differ between different levels of a factor, it may be easier to show how they overlap without using facetting.
 
@@ -332,6 +335,20 @@ pdf("myplot.pdf")
 p3
 dev.off()
 ```
+
+Sometimes the plot is to heavy to be easily opened afterwords. Someone thought of it and wrote a nice function (which you can find in the github of this class). Let's load it and export using it
+```{r}
+#load the functions
+source("small_plot_function.R")
+#this line is similar to usnig the pdf function but its parameters has to be saved to an object so that we can use it when we export
+res = mypdf("mySmallPlot.pdf", res = 600, height = 7, width = 7, units = "in")
+
+p3
+#this is equale to dev.off()
+mydev.off(pdfname = res$pdfname, mypattern = res$mypattern)
+```
+
+
 
 ### High quality files
 
@@ -446,7 +463,7 @@ p
 ggplotly(p)
 ```
 
-The second option is to transfer data into an interactive object. This is done with the `plot_ly()` function. This function was originally designed to create plots that were not available with `ggplot` such as 3D and mash plots. However, today you can create any plot with this function, and the majority of `ggplot` objects can be transformed into a `plotly` object. 
+The second option is to transfer data into an interactive object. This is done with the `plot_ly()` function. This function was originally designed to create plots that were not available with `ggplot` such as 3D and 3D mash plots. However, today you can create any plot with this function, and the majority of `ggplot` objects can be transformed into a `plotly` object. 
 
 We will learn a bit about the `plot_ly()` syntax for you to be able to use the power of the JS library in R.
 
@@ -626,7 +643,10 @@ p2
 # number of wines by continent and whether its and island (n)
 cc <- count(data_vis, Continent, ISLAND)
 # number of diamonds by Continent (nn)
-cc2 <- left_join(cc, count(cc, Continent, wt = n))
+nn = count(cc, Continent, wt = n) %>% 
+  rename(nn = n)
+cc2 <- cc %>% 
+  left_join(nn, by = "Continent")
 cc2 %>%
   mutate(prop = n / nn) %>%
   plot_ly(x = ~Continent, y = ~prop, color = ~ISLAND) %>%
@@ -789,6 +809,13 @@ https://stats.stackexchange.com/questions/117078/for-plotting-with-r-should-i-le
 Here is  a good comparison between the different available packages for plotting in R
 http://ouzor.github.io/blog/2014/11/21/interactive-visualizations.html
 
+### EXCERCISE
+
+This is your chance to play around with plotly.
+
+* Try to make the plots we made before with ggplot into an interactive plot with `ggplotly`
+
+* Plot the wine vs population consumption for each continent in a seperate plot with `plotly` syntax.
 
 # Geographic plotting
 
@@ -799,7 +826,7 @@ We can plot two types of geographical plots in R - static (`ggplot2`) and intera
 ### Manipulating the data
 To plot geographical data with `ggplot` you first need to change the structure of the data. We will use the shapefile `data_vis.sp` that we created previously.
 
-To use the shapefile in `ggplot2` we have to first `fortify` the spatial attribute of our data and then join the metadata back to the new spatial data
+To use the shapefile in `ggplot2` we have to first `fortify` the spatial attribute of our data and then join the metadata back to the new spatial data. `fortify` "flatens" the spatial data to a tabilar data but keeps its spatial parameters.
 
 ```{r}
 #save the metadata in a new object
@@ -883,7 +910,7 @@ pp <- ggplot() +
     labs(x = NULL, 
          y = NULL, 
          title = "The continents of the world")
-brks_scale <- levels(map_data$Continent)
+brks_scale <- levels(as.factor(map_data$Continent))
 labels_scale <- rev(brks_scale)
 qq <- pp +
     # now we have to use a manual scale, 
@@ -951,7 +978,7 @@ Lets put a random point on a default map
 ```{r}
 m <- leaflet() %>%
   addTiles() %>%  # Add default OpenStreetMap map tiles as a background
-  addMarkers(34.807371, 32.115358, popup="Where we are in the world")
+  addMarkers(12.577406, 55.687379, popup="Section for GeoGenetics")
 m
 ```
 
@@ -976,15 +1003,16 @@ m %>% addProviderTiles(providers$CartoDB.Positron)
 ```{r}
 # create a string with the adrdess and the link to the location
 content <- paste(sep = "<br/>",
-  "<b><a href='https://smnh.tau.ac.il/'>The Steinhardt Museum of Natural History</a></b>",
-  "Klausner St 12",
-  "Tel Aviv-Yafo, IL"
+  "<b><a href='https://globe.ku.dk/research/geogenetics/'>Section for GeoGenetics</a></b>",
+  "Øster Voldgade 5-7",
+  "DK-1350 Copenhagen",
+  "Denmark"
 )
 
 # plot a default map
 leaflet() %>% addTiles() %>%
   #add popup GPS coordinates, content variable allows the popup to appear
-  addPopups(34.807371, 32.115358, content)
+  addPopups(12.577406, 55.687379, content)
 ```
 
 You can use this website to find GPS coordinates for the address you are interested in

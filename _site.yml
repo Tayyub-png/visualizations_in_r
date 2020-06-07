@@ -1,8 +1,8 @@
-name: "ecodatasci-tlv"
+name: "globedatasci-ku"
 navbar:
   title: "Visualizations in R"
   type: 
   right:
-    - text: "EcoDataSci-TLV"
+    - text: "GlobeDataSci-KU"
       href: https://example.com
 output_dir: "."

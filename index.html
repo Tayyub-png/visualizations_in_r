@@ -343,6 +343,24 @@ div.tocify {
 </ol>
 <p>We will use data on per capita alcohol consumption in the countries of the world in 2010. At first, we will explore the data by generating typical plots. We will learn how to manipulate and design these plots to make them publication worthy, and how to turn them into interactive plots. We will then use the same data in shapefile format to learn how to plot the data on a global map.</p>
 <p>First thing is to make sure you have all the libraries uploaded for this session.</p>
+<pre class="r"><code>if (!require(&quot;tidyverse&quot;)) install.packages(&quot;tidyverse&quot;)
+if (!require(&quot;plotly&quot;)) install.packages(&quot;plotly&quot;)
+if (!require(&quot;leaflet&quot;)) install.packages(&quot;leaflet&quot;)
+if (!require(&quot;geojsonio&quot;)) install.packages(&quot;geojsonio&quot;)
+if (!require(&quot;ggpubr&quot;)) install.packages(&quot;ggpubr&quot;)
+if (!require(&quot;ggvis&quot;)) install.packages(&quot;ggvis&quot;)
+if (!require(&quot;RColorBrewer&quot;)) install.packages(&quot;RColorBrewer&quot;)
+if (!require(&quot;extrafont&quot;)) install.packages(&quot;extrafont&quot;)
+if (!require(&quot;cowplot&quot;)) install.packages(&quot;cowplot&quot;)
+if (!require(&quot;scales&quot;)) install.packages(&quot;scales&quot;)
+if (!require(&quot;ggmap&quot;)) install.packages(&quot;ggmap&quot;)
+if (!require(&quot;mapdata&quot;)) install.packages(&quot;mapdata&quot;)
+if (!require(&quot;webshot&quot;)) install.packages(&quot;webshot&quot;)
+if (!require(&quot;htmlwidgets&quot;)) install.packages(&quot;htmlwidgets&quot;)
+if (!require(&quot;processx&quot;)) install.packages(&quot;processx&quot;)
+if (!require(&quot;viridis&quot;)) install.packages(&quot;viridis&quot;)
+if (!require(&quot;ggrepel&quot;)) install.packages(&quot;ggrepel&quot;)
+if (!require(&quot;htmltools&quot;)) install.packages(&quot;htmltools&quot;)</code></pre>
 <p>A bit more preperation before we start: add all the fonts in your computer to R</p>
 <pre class="r"><code>font_import(prompt = F) #this imports fonts from your computer into R, and may take a lot of time
 #load the fonts

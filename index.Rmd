@@ -9,7 +9,7 @@ output:
     smooth_scroll: true
     toc_depth: 3
     runtime: shiny_prerendered
-    # number_sections: true
+    
 ---
 
 ```{r setup, include=FALSE}
